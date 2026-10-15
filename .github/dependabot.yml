@@ -4,6 +4,12 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    ignore:
+      # vsce requires it to match engines.vscode; both are raised together by hand.
+      - dependency-name: '@types/vscode'
+      # The types should match the Node.js inside VS Code, not the newest Node.js.
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
     groups:
       dev-dependencies:
         dependency-type: development
