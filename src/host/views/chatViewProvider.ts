@@ -5,10 +5,13 @@ import type {
   ChatToHostMessage,
   HostToChatMessage,
 } from '../../shared/protocol';
+import type { TwitchAuth } from '../auth/twitchAuth';
 import { fetchSevenTvChannelEmotes, fetchSevenTvGlobalEmotes } from '../emotes/sevenTv';
 import type { Logger } from '../logger';
 import type { ChannelSession } from '../session/channelSession';
 import { fetchChatBadges } from '../twitch/badges';
+import { fetchUserEmotes } from '../twitch/userEmotes';
+import { sendAsUser } from './chatAsUser';
 import { localResourceRoots, renderWebviewPage } from './webviewPage';
 
 const DEFAULT_MAX_MESSAGES = 200;
@@ -17,6 +20,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
   static readonly viewId = 'twitchPlayer.chat';
 
   private view: vscode.WebviewView | undefined;
+  /** The channel id whose chat is shown, or `none:<reason>` while there is none. */
   private shownChannelId: string | null = null;
   private loadSequence = 0;
   private readonly disposables: vscode.Disposable[] = [];
@@ -24,10 +28,16 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
   constructor(
     private readonly extensionUri: vscode.Uri,
     private readonly session: ChannelSession,
+    private readonly auth: TwitchAuth,
+    private readonly signIn: () => void,
     private readonly log: Logger,
   ) {
     this.disposables.push(
       session.onDidChangeStatus(() => void this.syncChannel()),
+      auth.onDidChangeAccount(() => {
+        this.postAccount();
+        void this.postUserEmotes();
+      }),
       vscode.workspace.onDidChangeConfiguration((event) => {
         if (event.affectsConfiguration('twitchPlayer.chat')) {
           this.postSettings();
@@ -53,17 +63,28 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
       allowWasm: false,
     });
     this.disposables.push(
-      view.webview.onDidReceiveMessage((message: ChatToHostMessage) => {
-        if (message.type === 'ready') {
-          this.postSettings();
-          this.shownChannelId = null;
-          void this.syncChannel();
-        }
-      }),
+      view.webview.onDidReceiveMessage((message: ChatToHostMessage) => this.handle(message)),
       view.onDidDispose(() => {
         this.view = undefined;
       }),
     );
+  }
+
+  private handle(message: ChatToHostMessage): void {
+    switch (message.type) {
+      case 'ready':
+        this.postSettings();
+        this.postAccount();
+        this.shownChannelId = null;
+        void this.syncChannel();
+        break;
+      case 'send':
+        void this.send(message.requestId, message.text);
+        break;
+      case 'signIn':
+        this.signIn();
+        break;
+    }
   }
 
   dispose(): void {
@@ -78,17 +99,12 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
       return;
     }
     const status = this.session.status;
-    const channel = this.session.channel;
-    if (!channel) {
-      if (status.kind === 'idle' && this.shownChannelId !== null) {
-        this.shownChannelId = null;
-        this.loadSequence++;
-        this.view.description = '';
-        this.post({ type: 'channel', channel: null });
-      }
+    if (status.kind === 'video' || status.kind === 'idle') {
+      this.showNoChannel(status.kind, status.kind === 'video' ? status.channel.displayName : '');
       return;
     }
-    if (channel.id === this.shownChannelId) {
+    const channel = this.session.channel;
+    if (!channel || channel.id === this.shownChannelId) {
       return;
     }
     this.shownChannelId = channel.id;
@@ -114,6 +130,52 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         badges,
       },
     });
+    await this.postUserEmotes();
+  }
+
+  private async send(requestId: number, text: string): Promise<void> {
+    const status = this.session.status;
+    const channel = status.kind === 'live' || status.kind === 'offline' ? status.channel : null;
+    const error = channel
+      ? await sendAsUser(this.auth, channel.id, text)
+      : vscode.l10n.t('Open a channel to chat.');
+    this.post({ type: 'sendResult', requestId, error });
+  }
+
+  private postAccount(): void {
+    this.post({ type: 'account', login: this.auth.account?.login ?? null });
+  }
+
+  /** The user's Twitch emotes for completion; sub and follower emotes depend on the channel. */
+  private async postUserEmotes(): Promise<void> {
+    const channel = this.session.channel;
+    if (!channel || !this.auth.account) {
+      this.post({ type: 'userEmotes', emotes: [] });
+      return;
+    }
+    const sequence = this.loadSequence;
+    const emotes = await this.auth
+      .withCredentials((credentials, account) =>
+        fetchUserEmotes(credentials, account.id, channel.id),
+      )
+      .catch((error: unknown) => {
+        this.log.warn(`Loading your Twitch emotes failed: ${String(error)}`);
+        return [];
+      });
+    if (sequence === this.loadSequence) {
+      this.post({ type: 'userEmotes', emotes });
+    }
+  }
+
+  private showNoChannel(reason: 'idle' | 'video', description: string): void {
+    const key = `none:${reason}`;
+    if (!this.view || this.shownChannelId === key) {
+      return;
+    }
+    this.shownChannelId = key;
+    this.loadSequence++;
+    this.view.description = description;
+    this.post({ type: 'noChannel', reason });
   }
 
   /** Global emotes first so channel emotes with the same name win. */

@@ -1,16 +1,21 @@
 import * as vscode from 'vscode';
+import { setUpTwitchAccount } from './host/auth/setUpTwitchAccount';
+import { setUpFollowing } from './host/following/setUpFollowing';
 import type { Logger } from './host/logger';
 import { ChannelSession } from './host/session/channelSession';
 import { PlayerPreferenceStore } from './host/session/playerPreferences';
 import { RecentChannels } from './host/session/recentChannels';
+import { VideoProgress } from './host/session/videoProgress';
 import { lookupChannel } from './host/twitch/channels';
-import { resolveLivePlaylistUrl } from './host/twitch/playback';
+import { resolveLivePlaylistUrl, resolveVideoPlaylist } from './host/twitch/playback';
 import type { RaidTarget } from './host/twitch/raidEvents';
 import { RaidWatcher } from './host/twitch/raidWatcher';
+import { lookupVideo } from './host/twitch/videos';
 import { ChatViewProvider } from './host/views/chatViewProvider';
 import { pickChannel } from './host/views/channelQuickPick';
 import { PlayerViewProvider } from './host/views/playerViewProvider';
-import { parseChannelInput } from './shared/channelInput';
+import { pickVideo, type VideoOwner } from './host/views/videoQuickPick';
+import { parseChannelInput, parseWatchInput } from './shared/channelInput';
 import type { ChannelInfo } from './shared/protocol';
 
 const HAS_CHANNEL_CONTEXT = 'twitchPlayer.hasChannel';
@@ -42,22 +47,38 @@ async function offerRaidFollow(
   }
 }
 
+/** Commands get channels from the following list and logins from other callers. */
+function isChannelReference(value: unknown): value is VideoOwner {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof (value as Partial<VideoOwner>).login === 'string' &&
+    typeof (value as Partial<VideoOwner>).displayName === 'string'
+  );
+}
+
 export function activate(context: vscode.ExtensionContext): void {
   const output = vscode.window.createOutputChannel('Lurk', { log: true });
   const log = createLogger(output);
   const recent = new RecentChannels(context.globalState);
   const preferences = new PlayerPreferenceStore(context.globalState);
+  const videoProgress = new VideoProgress(context.globalState);
+  const { auth, signIn } = setUpTwitchAccount(context, log);
+  setUpFollowing(context, auth, log);
 
   const session = new ChannelSession(
     {
       lookupChannel,
       resolvePlaylistUrl: resolveLivePlaylistUrl,
+      lookupVideo,
+      resolveVideoPlaylist,
       watchRaids: (channelId, onRaid) => new RaidWatcher(channelId, onRaid, log),
     },
     {
       shouldFollowRaids: () => settings().get<boolean>('followRaids', true),
       onRaidNotFollowed: (from, target) => void offerRaidFollow(session, from, target),
       rememberChannel: (channel) => recent.remember(channel),
+      resumePosition: (videoId) => videoProgress.resumePosition(videoId),
     },
     log,
   );
@@ -65,21 +86,63 @@ export function activate(context: vscode.ExtensionContext): void {
   const revealPlayer = () => vscode.commands.executeCommand(`${PlayerViewProvider.viewId}.focus`);
 
   const openChannel = (input: string): void => {
-    const login = parseChannelInput(input);
-    if (!login) {
+    const target = parseWatchInput(input);
+    if (!target) {
       void vscode.window.showWarningMessage(
-        vscode.l10n.t('"{0}" is not a valid Twitch channel name.', input),
+        vscode.l10n.t('"{0}" is neither a Twitch channel name nor a video link.', input),
       );
       return;
     }
     void revealPlayer();
-    void session.open(login);
+    if (target.type === 'video') {
+      void session.openVideo(target.id, target.startAt);
+    } else {
+      void session.open(target.login);
+    }
   };
 
-  const openInBrowser = (): void => {
-    const channel = session.channel;
-    if (channel) {
-      void vscode.env.openExternal(vscode.Uri.parse(`https://www.twitch.tv/${channel.login}`));
+  const openVideo = (id: string): void => {
+    void revealPlayer();
+    void session.openVideo(id);
+  };
+
+  /** Opens the given channel (from the following list) or whatever is playing. */
+  const openInBrowser = (channel?: unknown): void => {
+    const status = session.status;
+    let url: string | undefined;
+    if (isChannelReference(channel)) {
+      url = `https://www.twitch.tv/${channel.login}`;
+    } else if (status.kind === 'video') {
+      const position = videoProgress.resumePosition(status.video.id);
+      url = `https://www.twitch.tv/videos/${status.video.id}${position ? `?t=${position}s` : ''}`;
+    } else if (session.channel) {
+      url = `https://www.twitch.tv/${session.channel.login}`;
+    }
+    if (url) {
+      void vscode.env.openExternal(vscode.Uri.parse(url));
+    }
+  };
+
+  /** The channel to list videos of: the argument (login or tree item), the current one, or asked. */
+  const videoOwner = async (owner?: unknown): Promise<VideoOwner | undefined> => {
+    if (typeof owner === 'string') {
+      return { login: owner, displayName: owner };
+    }
+    if (isChannelReference(owner)) {
+      return owner;
+    }
+    if (session.channel) {
+      return session.channel;
+    }
+    const login = parseChannelInput((await pickChannel(recent.list())) ?? '');
+    return login ? { login, displayName: login } : undefined;
+  };
+
+  const showVideos = async (owner?: unknown): Promise<void> => {
+    const resolved = await videoOwner(owner);
+    const video = resolved ? await pickVideo(resolved) : undefined;
+    if (video) {
+      openVideo(video.id);
     }
   };
 
@@ -104,10 +167,18 @@ export function activate(context: vscode.ExtensionContext): void {
     session,
     recent,
     preferences,
-    { openChannel, showChat, openInBrowser, onReady: resumeLastChannelOnce },
+    videoProgress,
+    {
+      openChannel,
+      openVideo,
+      showVideos: () => void showVideos(),
+      showChat,
+      openInBrowser,
+      onReady: resumeLastChannelOnce,
+    },
     log,
   );
-  const chat = new ChatViewProvider(context.extensionUri, session, log);
+  const chat = new ChatViewProvider(context.extensionUri, session, auth, () => void signIn(), log);
 
   const promptForChannel = async (initial?: string): Promise<void> => {
     if (initial) {
@@ -134,9 +205,15 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand('twitchPlayer.openChannel', (channel?: string) =>
       promptForChannel(typeof channel === 'string' ? channel : undefined),
     ),
+    vscode.commands.registerCommand('twitchPlayer.watchChannel', (channel?: unknown) => {
+      if (isChannelReference(channel)) {
+        openChannel(channel.login);
+      }
+    }),
     vscode.commands.registerCommand('twitchPlayer.stop', () => session.stop()),
     vscode.commands.registerCommand('twitchPlayer.openInBrowser', openInBrowser),
     vscode.commands.registerCommand('twitchPlayer.showChat', showChat),
+    vscode.commands.registerCommand('twitchPlayer.showVideos', showVideos),
     vscode.commands.registerCommand('twitchPlayer.diagnostics', () => ({
       ...player.diagnostics,
       raidWatcherConnected: session.isWatchingRaids,

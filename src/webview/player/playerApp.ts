@@ -1,11 +1,14 @@
 import * as l10n from '@vscode/l10n';
 import type {
+  ChannelInfo,
   HostToPlayerMessage,
   PlayerErrorReason,
   PlayerPreferences,
   PlayerStatus,
   QualityPreference,
   RecentChannel,
+  VideoInfo,
+  WatchTarget,
 } from '../../shared/protocol';
 import { el } from '../common/dom';
 import { ICONS } from '../common/icons';
@@ -16,19 +19,39 @@ import { StreamPlayer, type QualityState } from './streamPlayer';
 import { createChannelPicker } from './ui/channelPicker';
 import { PlayerStage } from './ui/playerStage';
 import { createStatusScreen, textButton } from './ui/statusScreen';
+import { createVideoList } from './ui/videoList';
 
 const AUDIO_BLOCK_CHECK_MS = 1_000;
 const DIAGNOSTICS_INTERVAL_MS = 5_000;
+const PROGRESS_INTERVAL_MS = 5_000;
+const OFFLINE_VIDEO_COUNT = 5;
+const VIDEO_LIST_TTL_MS = 10 * 60_000;
 
-function errorMessage(reason: PlayerErrorReason, login: string): string {
+type PlaybackStatus = Extract<PlayerStatus, { kind: 'live' | 'video' }>;
+type ScreenStatus = Exclude<PlayerStatus, PlaybackStatus>;
+
+function errorMessage(reason: PlayerErrorReason, target: WatchTarget): string {
+  const isVideo = target.type === 'video';
   switch (reason) {
     case 'notFound':
-      return l10n.t('There is no Twitch channel "{0}".', login);
+      return target.type === 'channel'
+        ? l10n.t('There is no Twitch channel "{0}".', target.login)
+        : l10n.t('This video does not exist or was deleted.');
+    case 'subscribersOnly':
+      return l10n.t('Only subscribers of the channel can watch this video.');
     case 'unreachable':
       return l10n.t('Could not reach Twitch. Check your connection and try again.');
     case 'playbackFailing':
-      return l10n.t('The stream keeps failing to play. Try again in a moment.');
+      return isVideo
+        ? l10n.t('The video keeps failing to play. Try again in a moment.')
+        : l10n.t('The stream keeps failing to play. Try again in a moment.');
   }
+}
+
+function loadingTitle(target: WatchTarget): string {
+  return target.type === 'channel'
+    ? l10n.t('Opening {0}…', target.login)
+    : l10n.t('Opening the video…');
 }
 
 /** Renders whatever the extension host says is being watched. */
@@ -43,6 +66,8 @@ export class PlayerApp {
   private quality: QualityState = { options: [], selectedIndex: AUTO_LEVEL, playingLabel: null };
   private loadedPlaybackId: number | undefined;
   private announcedRaidChannelId: string | undefined;
+  private reportedPosition: number | undefined;
+  private videoList: { login: string; loadedAt: number; videos: Promise<VideoInfo[]> } | undefined;
 
   constructor(root: HTMLElement) {
     this.stage = new PlayerStage({
@@ -51,6 +76,7 @@ export class PlayerApp {
       selectLevel: (index) => this.selectLevel(index),
       togglePictureInPicture: () => void this.togglePictureInPicture(),
       unblockAudio: () => this.unlockAudio(),
+      seek: (seconds) => this.player.seek(seconds),
     });
     this.player = new StreamPlayer(this.stage.video, this.host, {
       onQualityChange: (state) => {
@@ -77,6 +103,7 @@ export class PlayerApp {
       AUDIO_BLOCK_CHECK_MS,
     );
     window.setInterval(() => this.reportDiagnostics(), DIAGNOSTICS_INTERVAL_MS);
+    window.setInterval(() => this.reportVideoProgress(), PROGRESS_INTERVAL_MS);
     this.host.post({ type: 'ready' });
   }
 
@@ -96,6 +123,9 @@ export class PlayerApp {
       case 'channelSuggestions':
         this.host.resolveSearch(message.requestId, message.suggestions);
         break;
+      case 'videos':
+        this.host.resolveVideos(message.requestId, message.videos);
+        break;
     }
   }
 
@@ -111,20 +141,11 @@ export class PlayerApp {
 
   private render(): void {
     const status = this.status;
-    const live = status.kind === 'live';
-    this.stage.element.hidden = !live;
-    this.screen.hidden = live;
-    if (status.kind === 'live') {
-      this.stage.showStream(status.channel, status.stream);
-      if (status.playback.id !== this.loadedPlaybackId) {
-        this.loadedPlaybackId = status.playback.id;
-        this.stage.setBuffering(true);
-        this.player.load(status.playback.url, this.preferences.quality);
-      }
-      if (status.raidedFrom && this.announcedRaidChannelId !== status.channel.id) {
-        this.announcedRaidChannelId = status.channel.id;
-        this.stage.showRaid(status.raidedFrom, status.channel.displayName);
-      }
+    const playing = status.kind === 'live' || status.kind === 'video';
+    this.stage.element.hidden = !playing;
+    this.screen.hidden = playing;
+    if (playing) {
+      this.showPlayback(status);
       this.screen.replaceChildren();
       return;
     }
@@ -135,7 +156,33 @@ export class PlayerApp {
     this.screen.replaceChildren(this.screenFor(status));
   }
 
-  private screenFor(status: Exclude<PlayerStatus, { kind: 'live' }>): HTMLElement {
+  private showPlayback(status: PlaybackStatus): void {
+    if (status.kind === 'live') {
+      this.stage.showStream(status.channel, status.stream);
+    } else {
+      this.stage.showVideo(status.channel, status.video);
+    }
+    if (status.playback.id !== this.loadedPlaybackId) {
+      this.loadedPlaybackId = status.playback.id;
+      this.reportedPosition = undefined;
+      this.stage.setBuffering(true);
+      this.player.load(
+        status.playback.url,
+        this.preferences.quality,
+        status.kind === 'live' ? { kind: 'live' } : { kind: 'video', startAt: status.startAt },
+      );
+    }
+    if (
+      status.kind === 'live' &&
+      status.raidedFrom &&
+      this.announcedRaidChannelId !== status.channel.id
+    ) {
+      this.announcedRaidChannelId = status.channel.id;
+      this.stage.showRaid(status.raidedFrom, status.channel.displayName);
+    }
+  }
+
+  private screenFor(status: ScreenStatus): HTMLElement {
     switch (status.kind) {
       case 'idle':
         // The panel starts out short, so the channel input comes first.
@@ -147,22 +194,42 @@ export class PlayerApp {
           }),
         ]);
       case 'loading':
-        return createStatusScreen({ busy: true, title: l10n.t('Opening {0}…', status.login) });
+        return createStatusScreen({ busy: true, title: loadingTitle(status.target) });
       case 'offline':
         return createStatusScreen({
           avatarUrl: status.channel.profileImageUrl,
           title: l10n.t('{0} is offline', status.channel.displayName),
           detail: l10n.t('The stream starts here automatically when they go live.'),
+          body: this.pastBroadcasts(status.channel),
           footer: this.channelPicker(),
         });
       case 'error':
         return createStatusScreen({
           iconPath: ICONS.retry,
-          title: errorMessage(status.reason, status.login),
+          title: errorMessage(status.reason, status.target),
           actions: [textButton(l10n.t('Try again'), () => this.host.post({ type: 'retry' }), true)],
           footer: this.channelPicker(),
         });
     }
+  }
+
+  /** Status updates re-render the offline screen, so the list is cached for a while. */
+  private pastBroadcasts(channel: ChannelInfo): HTMLElement {
+    const now = Date.now();
+    const cached = this.videoList;
+    if (cached?.login !== channel.login || now - cached.loadedAt > VIDEO_LIST_TTL_MS) {
+      this.videoList = {
+        login: channel.login,
+        loadedAt: now,
+        videos: this.host.listVideos(channel.login),
+      };
+    }
+    return createVideoList({
+      videos: this.videoList?.videos ?? Promise.resolve([]),
+      limit: OFFLINE_VIDEO_COUNT,
+      onOpen: (id) => this.host.post({ type: 'openVideo', id }),
+      onShowAll: () => this.host.post({ type: 'showVideos' }),
+    });
   }
 
   private channelPicker(): HTMLElement {
@@ -207,8 +274,27 @@ export class PlayerApp {
   }
 
   private reportDiagnostics(): void {
-    if (this.status.kind === 'live') {
+    if (this.status.kind === 'live' || this.status.kind === 'video') {
       this.host.post({ type: 'diagnostics', diagnostics: this.player.diagnostics() });
     }
+  }
+
+  /** Lets the host resume the video later where the user stopped. */
+  private reportVideoProgress(): void {
+    const position = Math.floor(this.player.currentTime);
+    if (
+      this.status.kind !== 'video' ||
+      !this.player.isPlaying ||
+      position === this.reportedPosition
+    ) {
+      return;
+    }
+    this.reportedPosition = position;
+    this.host.post({
+      type: 'videoProgress',
+      id: this.status.video.id,
+      position,
+      duration: this.player.duration,
+    });
   }
 }

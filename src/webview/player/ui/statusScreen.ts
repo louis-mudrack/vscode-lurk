@@ -7,6 +7,7 @@ export interface StatusScreenOptions {
   iconPath?: string;
   busy?: boolean;
   actions?: HTMLElement[];
+  body?: HTMLElement;
   footer?: HTMLElement;
 }
 
@@ -28,6 +29,7 @@ export function createStatusScreen(options: StatusScreenOptions): HTMLElement {
     el('h2', { className: 'status-title', text: options.title }),
     options.detail ? el('p', { className: 'status-detail', text: options.detail }) : null,
     options.actions?.length ? el('div', { className: 'status-actions' }, options.actions) : null,
+    options.body,
     options.footer,
   ]);
 }

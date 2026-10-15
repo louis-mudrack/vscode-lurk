@@ -50,3 +50,19 @@ GitHub's OIDC token and a managed identity. One-time setup:
 The Marketplace is also working on token-free "trusted publishing" for GitHub Actions
 (`vsce publish --oidc`). Once that is available, the Azure steps above can be replaced by a trust
 policy on the publisher.
+
+## Twitch application for signing in
+
+Signing in uses Twitch's device code flow with Lurk's own Twitch application. It is a public client,
+so it has no secret and its client ID can live in the source code. One-time setup:
+
+1. Open the [Twitch developer console](https://dev.twitch.tv/console/apps) (it requires two-factor
+   authentication on your Twitch account) and choose **Register Your Application**.
+2. Name it e.g. `Lurk for VS Code` – Twitch rejects names containing "Twitch". Enter
+   `http://localhost` as OAuth redirect URL (the device code flow does not use it, but the field is
+   required), pick the category **Application Integration** and the client type **Public**.
+3. Open the application with **Manage** and copy its **Client ID** into `LURK_CLIENT_ID` in
+   `src/host/auth/twitchApp.ts`.
+
+Until then, signing in only works after entering a client ID in the `twitchPlayer.twitchClientId`
+setting.

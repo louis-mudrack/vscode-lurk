@@ -6,7 +6,9 @@
 
 **Lurk** (a. k. a. _Arbeitszeitbetrug_) zeigt einen Twitch-Livestream in einem kleinen Panel im
 Explorer von VS Code – direkt unter Gliederung und Zeitachse – und den Chat in einem zweiten Panel.
-Wenn der Streamer jemanden raidet, wechselt Lurk automatisch zum nächsten Kanal.
+Wenn der Streamer jemanden raidet, wechselt Lurk automatisch zum nächsten Kanal. Vergangene
+Übertragungen laufen dort auch, und nach der Anmeldung siehst du, welche Kanäle, denen du folgst,
+live sind, und kannst mitchatten.
 
 <p align="center">
   <img src="media/brand/preview.png" alt="Lurk in der VS-Code-Seitenleiste: Livestream mit Steuerung über dem Chat" width="900">
@@ -25,7 +27,15 @@ Wenn der Streamer jemanden raidet, wechselt Lurk automatisch zum nächsten Kanal
   kommt stattdessen eine Benachrichtigung mit _Schauen_-Button.
 - **Chat mit 7TV-Emotes** – Twitch-Emotes, globale und Kanal-Emotes von 7TV (inklusive
   Zero-Width-Overlays), Badges, Erwähnungen und Links, gut lesbare Namensfarben in jedem Theme.
-  Nur lesend.
+- **Mitschreiben** – nach der Anmeldung: Emote-Vervollständigung wie in Chatterino (`:kek` tippen
+  oder <kbd>Tab</kbd> drücken) mit deinen Twitch-Emotes und den 7TV-Emotes des Kanals,
+  `@name`-Vervollständigung, <kbd>↑</kbd> für die letzte Nachricht, und Nachrichten, die dich
+  erwähnen, werden hervorgehoben.
+- **Kanäle, denen du folgst** – das Panel _Twitch – Gefolgt_ listet sie, Live-Kanäle zuerst mit
+  Spiel und Zuschauerzahl. Ein Klick startet den Stream.
+- **Vergangene Übertragungen** – Offline-Kanäle zeigen ihre letzten Übertragungen; sie laufen mit
+  Suchleiste, und Lurk merkt sich, wo du aufgehört hast. Auch `twitch.tv/videos/…`-Links
+  funktionieren, inklusive `?t=1h2m`.
 - **Läuft im Hintergrund weiter** – Panel zuklappen, zu Suche oder Quellcodeverwaltung wechseln
   oder VS Code minimieren: Der Ton läuft weiter.
 - **Bild im Bild** – Doppelklick aufs Video öffnet ein schwebendes Fenster.
@@ -54,8 +64,19 @@ Benötigt VS Code 1.95 oder neuer.
    in das untere Panel oder in die sekundäre Seitenleiste.
 
 In der Titelleiste des Panels gibt es Buttons, um einen anderen Kanal zu öffnen, den Chat zu
-zeigen, den Stream auf twitch.tv zu öffnen und ihn zu beenden. Zuletzt geschaute Kanäle stehen auf
-dem Startbildschirm.
+zeigen, den Stream auf twitch.tv zu öffnen und ihn zu beenden; im <kbd>…</kbd>-Menü stehen die
+vergangenen Übertragungen des Kanals. Zuletzt geschaute Kanäle stehen auf dem Startbildschirm.
+
+### Anmelden (optional)
+
+**Twitch – Gefolgt** aufklappen und **Mit Twitch anmelden** klicken oder **Lurk: Mit Twitch
+anmelden** ausführen. Lurk öffnet twitch.tv mit bereits eingetragenem Code; dort bestätigen, und du
+bist angemeldet. Abmelden geht über das <kbd>…</kbd>-Menü des Panels oder das Menü _Konten_ von
+VS Code.
+
+Lurk fragt bei Twitch drei Berechtigungen an: die Kanäle lesen, denen du folgst
+(`user:read:follows`), deine Emotes für die Vervollständigung lesen (`user:read:emotes`) und deine
+Chatnachrichten senden (`user:write:chat`).
 
 ## Einstellungen
 
@@ -65,19 +86,26 @@ dem Startbildschirm.
 | `twitchPlayer.quality`           | `auto`   | Bevorzugte Qualität: `auto`, `1080p`, `720p`, `480p`, `360p`, `160p`. |
 | `twitchPlayer.resumeLastChannel` | `false`  | Den letzten Kanal beim Start von VS Code wieder öffnen.               |
 | `twitchPlayer.chat.maxMessages`  | `200`    | Anzahl der Chatnachrichten, die im Chat-Panel bleiben.                |
+| `twitchPlayer.twitchClientId`    | (leer)   | Client-ID einer eigenen Twitch-Anwendung für die Anmeldung (Forks).   |
 
 ## Gut zu wissen
 
-- **Kein Konto, kein Tracking.** Lurk meldet sich nicht bei Twitch an und sammelt keine Daten. Es
-  verbindet sich nur mit Twitch (`gql.twitch.tv`, `usher.ttvnw.net` und dem Video-CDN,
-  `hermes.twitch.tv` für Raids, `irc-ws.chat.twitch.tv` für den Chat, `static-cdn.jtvnw.net` für
-  Emotes und Badges) und mit 7TV (`7tv.io`, `cdn.7tv.app`).
-- **Inoffizielle Schnittstellen.** Lurk nutzt dieselben öffentlichen Schnittstellen ohne Anmeldung
-  wie die Website twitch.tv, so wie andere Drittanbieter-Player auch. Sie sind keine offizielle API;
-  Twitch kann sie jederzeit ändern, und dann funktioniert etwas eventuell erst nach einem Update
-  wieder.
+- **Kein Tracking, Konto optional.** Lurk sammelt keine Daten. Zum Schauen braucht es kein Konto.
+  Meldest du dich an, bleibt das Twitch-Token im Geheimspeicher von VS Code (dem Schlüsselbund
+  deines Systems), wird nur an Twitch geschickt und beim Abmelden widerrufen. Lurk verbindet sich
+  nur mit Twitch (`gql.twitch.tv`, `usher.ttvnw.net` und den Video-CDNs, `hermes.twitch.tv` für
+  Raids, `irc-ws.chat.twitch.tv` für den Chat, `static-cdn.jtvnw.net` für Emotes und Badges sowie
+  `id.twitch.tv` und `api.twitch.tv`, wenn du angemeldet bist) und mit 7TV (`7tv.io`,
+  `cdn.7tv.app`).
+- **Inoffizielle Schnittstellen.** Für die Wiedergabe nutzt Lurk dieselben öffentlichen
+  Schnittstellen ohne Anmeldung wie die Website twitch.tv, so wie andere Drittanbieter-Player auch.
+  Sie sind keine offizielle API; Twitch kann sie jederzeit ändern, und dann funktioniert etwas
+  eventuell erst nach einem Update wieder. Alles, was dein Konto braucht, läuft über die offizielle
+  API von Twitch.
 - **Werbung** läuft wie auf twitch.tv; währenddessen zeigt der Player „Werbepause“ an.
-- **Der Chat ist nur lesend.** Zum Schreiben den Link _Auf twitch.tv chatten_ nutzen.
+- **Keine Kanalpunkte.** Twitch vergibt Kanalpunkte nur in den eigenen Apps und lässt sie nur dort
+  einsammeln; in Lurk zu schauen bringt daher keine.
+- **Kein Chat-Verlauf bei vergangenen Übertragungen.** Das Chat-Panel zeigt nur den Live-Chat.
 
 ## Mitmachen
 

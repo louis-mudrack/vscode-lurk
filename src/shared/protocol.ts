@@ -10,12 +10,35 @@ export interface ChannelInfo {
   profileImageUrl: string;
 }
 
+/** The signed-in Twitch user. */
+export interface TwitchAccount {
+  id: string;
+  login: string;
+  displayName: string;
+  profileImageUrl: string;
+}
+
 export interface StreamInfo {
   title: string;
   game: string | null;
   viewers: number;
   startedAt: string;
 }
+
+export interface VideoInfo {
+  id: string;
+  title: string;
+  game: string | null;
+  durationSeconds: number;
+  createdAt: string;
+  thumbnailUrl: string;
+  viewCount: number;
+  /** The broadcast is still running, so the video keeps growing. */
+  isRecording: boolean;
+}
+
+/** What the user asked to watch. */
+export type WatchTarget = { type: 'channel'; login: string } | { type: 'video'; id: string };
 
 export interface PlaybackSource {
   /** Increments whenever the player must (re)load, even if the URL repeats. */
@@ -24,11 +47,11 @@ export interface PlaybackSource {
 }
 
 /** The webview turns these into localized messages. */
-export type PlayerErrorReason = 'notFound' | 'unreachable' | 'playbackFailing';
+export type PlayerErrorReason = 'notFound' | 'subscribersOnly' | 'unreachable' | 'playbackFailing';
 
 export type PlayerStatus =
   | { kind: 'idle' }
-  | { kind: 'loading'; login: string }
+  | { kind: 'loading'; target: WatchTarget }
   | {
       kind: 'live';
       channel: ChannelInfo;
@@ -37,7 +60,15 @@ export type PlayerStatus =
       raidedFrom?: string;
     }
   | { kind: 'offline'; channel: ChannelInfo; raidedFrom?: string }
-  | { kind: 'error'; login: string; reason: PlayerErrorReason };
+  | {
+      kind: 'video';
+      channel: ChannelInfo;
+      video: VideoInfo;
+      playback: PlaybackSource;
+      /** Seconds into the video where playback starts. */
+      startAt: number;
+    }
+  | { kind: 'error'; target: WatchTarget; reason: PlayerErrorReason };
 
 export const QUALITY_OPTIONS = ['auto', '1080p', '720p', '480p', '360p', '160p'] as const;
 export type QualityPreference = (typeof QUALITY_OPTIONS)[number];
@@ -82,16 +113,21 @@ export type HostToPlayerMessage =
   | { type: 'status'; status: PlayerStatus; recent: RecentChannel[] }
   | { type: 'preferences'; preferences: PlayerPreferences }
   | { type: 'fetchResult'; requestId: number; result: HostFetchResult }
-  | { type: 'channelSuggestions'; requestId: number; suggestions: ChannelSuggestion[] };
+  | { type: 'channelSuggestions'; requestId: number; suggestions: ChannelSuggestion[] }
+  | { type: 'videos'; requestId: number; videos: VideoInfo[] };
 
 export type PlayerToHostMessage =
   | { type: 'ready' }
   | { type: 'openChannel'; input: string }
+  | { type: 'openVideo'; id: string }
+  | { type: 'showVideos' }
   | { type: 'stop' }
   | { type: 'retry' }
   | { type: 'removeRecent'; login: string }
   | { type: 'fetch'; requestId: number; url: string; responseType: 'text' | 'arraybuffer' }
   | { type: 'searchChannels'; requestId: number; query: string }
+  | { type: 'listVideos'; requestId: number; login: string }
+  | { type: 'videoProgress'; id: string; position: number; duration: number }
   | { type: 'playbackFailed'; reason: string }
   | { type: 'savePreferences'; preferences: Partial<PlayerPreferences> }
   | { type: 'showChat' }
@@ -127,8 +163,14 @@ export interface ChatChannel {
 }
 
 export type HostToChatMessage =
-  | { type: 'channel'; channel: ChatChannel | null }
+  | { type: 'channel'; channel: ChatChannel }
+  | { type: 'noChannel'; reason: 'idle' | 'video' }
+  /** The signed-in user's login, or null when signed out (chat is then read-only). */
+  | { type: 'account'; login: string | null }
+  | { type: 'userEmotes'; emotes: ChatEmote[] }
+  | { type: 'sendResult'; requestId: number; error: string | null }
   | { type: 'settings'; maxMessages: number }
   | { type: 'notice'; text: string };
 
-export type ChatToHostMessage = { type: 'ready' };
+export type ChatToHostMessage =
+  { type: 'ready' } | { type: 'send'; requestId: number; text: string } | { type: 'signIn' };

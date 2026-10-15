@@ -1,9 +1,11 @@
 import * as l10n from '@vscode/l10n';
-import type { ChannelInfo, StreamInfo } from '../../../shared/protocol';
+import type { ChannelInfo, StreamInfo, VideoInfo } from '../../../shared/protocol';
+import { formatRelativeTime, formatUptime } from '../../../shared/timeFormat';
 import { el, icon } from '../../common/dom';
-import { formatExactCount, formatUptime, formatViewerCount } from '../../common/format';
+import { formatExactCount, formatViewerCount } from '../../common/format';
 import { ICONS } from '../../common/icons';
-import { ControlBar, type ControlBarActions } from './controlBar';
+import { uiLanguage } from '../../common/l10n';
+import { ControlBar, type ControlBarActions, type ControlMode } from './controlBar';
 
 const RAID_BANNER_MS = 8_000;
 
@@ -27,12 +29,17 @@ export class PlayerStage {
   private readonly name = el('span', { className: 'info-name' });
   private readonly game = el('span', { className: 'info-game' });
   private readonly viewers = el('span', { className: 'info-viewers' });
+  private readonly viewersGroup = el('span', { className: 'info-viewers-group' }, [
+    icon(ICONS.viewers),
+    this.viewers,
+  ]);
+  private readonly videoDate = el('span', { className: 'info-date' });
   private readonly title = el('div', { className: 'info-title' });
   private raidTimer: number | undefined;
 
   constructor(actions: PlayerStageActions) {
     this.video = el('video', { className: 'video', attributes: { playsinline: '' } });
-    this.controls = new ControlBar(actions);
+    this.controls = new ControlBar(actions, this.video);
     this.unblockButton = el(
       'button',
       { className: 'unblock-audio', attributes: { type: 'button' } },
@@ -56,7 +63,8 @@ export class PlayerStage {
         this.name,
         this.game,
         el('span', { className: 'spacer' }),
-        el('span', { className: 'info-viewers-group' }, [icon(ICONS.viewers), this.viewers]),
+        this.viewersGroup,
+        this.videoDate,
       ]),
       this.title,
     ]);
@@ -73,20 +81,25 @@ export class PlayerStage {
   }
 
   showStream(channel: ChannelInfo, stream: StreamInfo): void {
-    this.avatar.src = channel.profileImageUrl;
-    this.name.textContent = channel.displayName;
-    this.game.textContent = stream.game ? `· ${stream.game}` : '';
+    this.setMode('live');
+    this.showHeader(channel, stream.game, stream.title);
     this.viewers.textContent = formatViewerCount(stream.viewers);
-    this.viewers.parentElement?.setAttribute(
-      'title',
-      l10n.t(
-        '{0} viewers · live for {1}',
-        formatExactCount(stream.viewers),
-        formatUptime(stream.startedAt),
-      ),
+    this.viewersGroup.title = l10n.t(
+      '{0} viewers · live for {1}',
+      formatExactCount(stream.viewers),
+      formatUptime(stream.startedAt),
     );
-    this.title.textContent = stream.title;
-    this.title.title = stream.title;
+  }
+
+  showVideo(channel: ChannelInfo, video: VideoInfo): void {
+    this.setMode('video');
+    this.showHeader(channel, video.game, video.title);
+    this.videoDate.textContent = formatRelativeTime(video.createdAt, uiLanguage());
+    this.videoDate.title = l10n.t(
+      'Broadcast on {0} · {1} views',
+      new Date(video.createdAt).toLocaleString(uiLanguage()),
+      formatExactCount(video.viewCount),
+    );
   }
 
   showRaid(from: string, to: string): void {
@@ -111,5 +124,19 @@ export class PlayerStage {
 
   setAudioBlocked(blocked: boolean): void {
     this.unblockButton.hidden = !blocked;
+  }
+
+  private setMode(mode: ControlMode): void {
+    this.controls.setMode(mode);
+    this.viewersGroup.hidden = mode !== 'live';
+    this.videoDate.hidden = mode !== 'video';
+  }
+
+  private showHeader(channel: ChannelInfo, game: string | null, title: string): void {
+    this.avatar.src = channel.profileImageUrl;
+    this.name.textContent = channel.displayName;
+    this.game.textContent = game ? `· ${game}` : '';
+    this.title.textContent = title;
+    this.title.title = title;
   }
 }

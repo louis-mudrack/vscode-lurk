@@ -4,13 +4,17 @@ import { ICONS } from '../../common/icons';
 import { AUTO_LEVEL } from '../qualityLevels';
 import type { QualityState } from '../streamPlayer';
 import { QualityMenu } from './qualityMenu';
+import { SeekBar } from './seekBar';
 
 export interface ControlBarActions {
   togglePause(): void;
   setVolume(volume: number, muted: boolean): void;
   selectLevel(index: number): void;
   togglePictureInPicture(): void;
+  seek(seconds: number): void;
 }
+
+export type ControlMode = 'live' | 'video';
 
 const DEFAULT_UNMUTE_VOLUME = 0.5;
 
@@ -33,7 +37,7 @@ function setIcon(button: HTMLButtonElement, path: string, label: string): void {
   button.setAttribute('aria-label', label);
 }
 
-/** Play/pause, volume, live badge, quality and picture-in-picture controls. */
+/** Play/pause, volume, live badge or seek bar, quality and picture-in-picture controls. */
 export class ControlBar {
   readonly element: HTMLElement;
   private volume = 0.5;
@@ -43,8 +47,14 @@ export class ControlBar {
   private readonly volumeSlider: HTMLInputElement;
   private readonly qualityButton: HTMLButtonElement;
   private readonly qualityMenu: QualityMenu;
+  private readonly liveBadge = el('span', { className: 'live-badge', text: l10n.t('LIVE') });
+  private readonly seekBar: SeekBar;
 
-  constructor(private readonly actions: ControlBarActions) {
+  constructor(
+    private readonly actions: ControlBarActions,
+    video: HTMLVideoElement,
+  ) {
+    this.seekBar = new SeekBar(video, (seconds) => actions.seek(seconds));
     this.playButton = iconButton(l10n.t('Pause'), ICONS.pause, () => actions.togglePause());
     this.muteButton = iconButton(l10n.t('Mute'), ICONS.volume, () => this.toggleMute());
     this.volumeSlider = el('input', {
@@ -76,14 +86,23 @@ export class ControlBar {
         )
       : null;
 
-    this.element = el('div', { className: 'control-bar' }, [
+    const buttons = el('div', { className: 'control-row' }, [
       this.playButton,
       el('div', { className: 'volume-group' }, [this.muteButton, this.volumeSlider]),
-      el('span', { className: 'live-badge', text: l10n.t('LIVE') }),
+      this.liveBadge,
+      this.seekBar.time,
       el('span', { className: 'spacer' }),
       el('div', { className: 'quality-anchor' }, [this.qualityButton, this.qualityMenu.element]),
       pictureInPicture,
     ]);
+    this.element = el('div', { className: 'control-bar' }, [this.seekBar.slider, buttons]);
+    this.setMode('live');
+  }
+
+  setMode(mode: ControlMode): void {
+    this.element.classList.toggle('video-mode', mode === 'video');
+    this.liveBadge.hidden = mode !== 'live';
+    this.seekBar.setVisible(mode === 'video');
   }
 
   setPaused(paused: boolean): void {

@@ -1,6 +1,6 @@
 {
   "displayName": "Lurk – Twitch streams in your sidebar",
-  "description": "Watch Twitch livestreams in a small VS Code panel, with chat, 7TV emotes and automatic raid following.",
+  "description": "Watch Twitch livestreams and past broadcasts in a small VS Code panel, with chat, 7TV emotes, automatic raid following and the channels you follow.",
   "view.player": "Twitch",
   "view.chat": "Twitch Chat",
   "command.openChannel": "Open Twitch Channel…",
@@ -16,5 +16,13 @@
   "config.quality.360p": "Up to 360p.",
   "config.quality.160p": "Lowest quality, least bandwidth.",
   "config.resumeLastChannel": "Reopen the last watched channel when the player panel is shown after VS Code starts.",
-  "config.chat.maxMessages": "How many chat messages to keep in the chat panel."
+  "config.chat.maxMessages": "How many chat messages to keep in the chat panel.",
+  "view.following": "Twitch Following",
+  "welcome.following": "Sign in with your Twitch account to see which of the channels you follow are live and to chat.\n[Sign in with Twitch](command:twitchPlayer.signIn)\nLurk reads the channels you follow and your emotes, and sends only the messages you write.",
+  "command.showVideos": "Show Past Broadcasts…",
+  "command.signIn": "Sign in with Twitch",
+  "command.signOut": "Sign out of Twitch",
+  "command.refreshFollowing": "Refresh",
+  "command.watchChannel": "Watch",
+  "config.twitchClientId": "Client ID of your own [Twitch application](https://dev.twitch.tv/console/apps) (client type *Public*) to sign in with. Leave empty to use Lurk's."
 }

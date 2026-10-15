@@ -2,14 +2,29 @@ import type {
   ChannelSuggestion,
   HostFetchResult,
   PlayerToHostMessage,
+  VideoInfo,
 } from '../../shared/protocol';
 import { vscodeApi } from '../common/vscodeApi';
 
-/** Request/response wrapper around the extension host for stream resources. */
+class PendingRequests<T> {
+  private readonly resolvers = new Map<number, (value: T) => void>();
+
+  wait(requestId: number): Promise<T> {
+    return new Promise((resolve) => this.resolvers.set(requestId, resolve));
+  }
+
+  resolve(requestId: number, value: T): void {
+    this.resolvers.get(requestId)?.(value);
+    this.resolvers.delete(requestId);
+  }
+}
+
+/** Request/response wrapper around the extension host. */
 export class HostBridge {
   private nextRequestId = 1;
-  private readonly pending = new Map<number, (result: HostFetchResult) => void>();
-  private readonly pendingSearches = new Map<number, (suggestions: ChannelSuggestion[]) => void>();
+  private readonly fetches = new PendingRequests<HostFetchResult>();
+  private readonly searches = new PendingRequests<ChannelSuggestion[]>();
+  private readonly videoLists = new PendingRequests<VideoInfo[]>();
 
   post(message: PlayerToHostMessage): void {
     vscodeApi<PlayerToHostMessage>().postMessage(message);
@@ -17,27 +32,34 @@ export class HostBridge {
 
   fetch(url: string, responseType: 'text' | 'arraybuffer'): Promise<HostFetchResult> {
     const requestId = this.nextRequestId++;
-    return new Promise((resolve) => {
-      this.pending.set(requestId, resolve);
-      this.post({ type: 'fetch', requestId, url, responseType });
-    });
+    const result = this.fetches.wait(requestId);
+    this.post({ type: 'fetch', requestId, url, responseType });
+    return result;
   }
 
   searchChannels(query: string): Promise<ChannelSuggestion[]> {
     const requestId = this.nextRequestId++;
-    return new Promise((resolve) => {
-      this.pendingSearches.set(requestId, resolve);
-      this.post({ type: 'searchChannels', requestId, query });
-    });
+    const result = this.searches.wait(requestId);
+    this.post({ type: 'searchChannels', requestId, query });
+    return result;
   }
 
-  resolveSearch(requestId: number, suggestions: ChannelSuggestion[]): void {
-    this.pendingSearches.get(requestId)?.(suggestions);
-    this.pendingSearches.delete(requestId);
+  listVideos(login: string): Promise<VideoInfo[]> {
+    const requestId = this.nextRequestId++;
+    const result = this.videoLists.wait(requestId);
+    this.post({ type: 'listVideos', requestId, login });
+    return result;
   }
 
   resolveFetch(requestId: number, result: HostFetchResult): void {
-    this.pending.get(requestId)?.(result);
-    this.pending.delete(requestId);
+    this.fetches.resolve(requestId, result);
+  }
+
+  resolveSearch(requestId: number, suggestions: ChannelSuggestion[]): void {
+    this.searches.resolve(requestId, suggestions);
+  }
+
+  resolveVideos(requestId: number, videos: VideoInfo[]): void {
+    this.videoLists.resolve(requestId, videos);
   }
 }

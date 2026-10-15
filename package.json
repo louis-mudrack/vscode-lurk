@@ -32,7 +32,8 @@
     "chat",
     "7tv",
     "raid",
-    "lurk"
+    "lurk",
+    "vod"
   ],
   "icon": "media/icon.png",
   "galleryBanner": {
@@ -64,6 +65,13 @@
           "icon": "media/chat.svg",
           "contextualTitle": "Lurk",
           "visibility": "collapsed"
+        },
+        {
+          "id": "twitchPlayer.following",
+          "name": "%view.following%",
+          "icon": "media/following.svg",
+          "contextualTitle": "Lurk",
+          "visibility": "collapsed"
         }
       ]
     },
@@ -91,6 +99,36 @@
         "title": "%command.showChat%",
         "category": "Lurk",
         "icon": "$(comment-discussion)"
+      },
+      {
+        "command": "twitchPlayer.showVideos",
+        "title": "%command.showVideos%",
+        "category": "Lurk",
+        "icon": "$(device-camera-video)"
+      },
+      {
+        "command": "twitchPlayer.signIn",
+        "title": "%command.signIn%",
+        "category": "Lurk",
+        "icon": "$(sign-in)"
+      },
+      {
+        "command": "twitchPlayer.signOut",
+        "title": "%command.signOut%",
+        "category": "Lurk",
+        "icon": "$(sign-out)"
+      },
+      {
+        "command": "twitchPlayer.refreshFollowing",
+        "title": "%command.refreshFollowing%",
+        "category": "Lurk",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "twitchPlayer.watchChannel",
+        "title": "%command.watchChannel%",
+        "category": "Lurk",
+        "icon": "$(play)"
       }
     ],
     "menus": {
@@ -114,6 +152,21 @@
           "command": "twitchPlayer.stop",
           "when": "view == twitchPlayer.player && twitchPlayer.hasChannel",
           "group": "navigation@4"
+        },
+        {
+          "command": "twitchPlayer.showVideos",
+          "when": "view == twitchPlayer.player && twitchPlayer.hasChannel",
+          "group": "videos@1"
+        },
+        {
+          "command": "twitchPlayer.refreshFollowing",
+          "when": "view == twitchPlayer.following && twitchPlayer.signedIn",
+          "group": "navigation@1"
+        },
+        {
+          "command": "twitchPlayer.signOut",
+          "when": "view == twitchPlayer.following && twitchPlayer.signedIn",
+          "group": "account@1"
         }
       ],
       "commandPalette": [
@@ -128,6 +181,44 @@
         {
           "command": "twitchPlayer.showChat",
           "when": "twitchPlayer.hasChannel"
+        },
+        {
+          "command": "twitchPlayer.signIn",
+          "when": "!twitchPlayer.signedIn"
+        },
+        {
+          "command": "twitchPlayer.signOut",
+          "when": "twitchPlayer.signedIn"
+        },
+        {
+          "command": "twitchPlayer.refreshFollowing",
+          "when": "twitchPlayer.signedIn"
+        },
+        {
+          "command": "twitchPlayer.watchChannel",
+          "when": "false"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "twitchPlayer.showVideos",
+          "when": "view == twitchPlayer.following && viewItem =~ /^channel/",
+          "group": "inline@1"
+        },
+        {
+          "command": "twitchPlayer.watchChannel",
+          "when": "view == twitchPlayer.following && viewItem =~ /^channel/",
+          "group": "1_watch@1"
+        },
+        {
+          "command": "twitchPlayer.showVideos",
+          "when": "view == twitchPlayer.following && viewItem =~ /^channel/",
+          "group": "1_watch@2"
+        },
+        {
+          "command": "twitchPlayer.openInBrowser",
+          "when": "view == twitchPlayer.following && viewItem =~ /^channel/",
+          "group": "2_browser@1"
         }
       ]
     },
@@ -171,9 +262,28 @@
           "minimum": 20,
           "maximum": 1000,
           "description": "%config.chat.maxMessages%"
+        },
+        "twitchPlayer.twitchClientId": {
+          "type": "string",
+          "default": "",
+          "scope": "application",
+          "markdownDescription": "%config.twitchClientId%"
         }
       }
-    }
+    },
+    "viewsWelcome": [
+      {
+        "view": "twitchPlayer.following",
+        "contents": "%welcome.following%",
+        "when": "!twitchPlayer.signedIn"
+      }
+    ],
+    "authentication": [
+      {
+        "id": "lurk-twitch",
+        "label": "Twitch"
+      }
+    ]
   },
   "scripts": {
     "build": "node scripts/build.mjs",

@@ -1,6 +1,6 @@
 {
   "displayName": "Lurk – Twitch-Streams in der Seitenleiste",
-  "description": "Twitch-Livestreams in einem kleinen VS-Code-Panel schauen, mit Chat, 7TV-Emotes und automatischem Folgen bei Raids.",
+  "description": "Twitch-Livestreams und vergangene Übertragungen in einem kleinen VS-Code-Panel schauen, mit Chat, 7TV-Emotes, automatischem Folgen bei Raids und den Kanälen, denen du folgst.",
   "view.player": "Twitch",
   "view.chat": "Twitch-Chat",
   "command.openChannel": "Twitch-Kanal öffnen…",
@@ -16,5 +16,13 @@
   "config.quality.360p": "Bis 360p.",
   "config.quality.160p": "Niedrigste Qualität, geringste Bandbreite.",
   "config.resumeLastChannel": "Den zuletzt geschauten Kanal wieder öffnen, wenn das Player-Panel nach dem Start von VS Code angezeigt wird.",
-  "config.chat.maxMessages": "Wie viele Chatnachrichten im Chat-Panel behalten werden."
+  "config.chat.maxMessages": "Wie viele Chatnachrichten im Chat-Panel behalten werden.",
+  "view.following": "Twitch – Gefolgt",
+  "welcome.following": "Melde dich mit deinem Twitch-Konto an, um zu sehen, welche Kanäle, denen du folgst, gerade live sind, und um zu chatten.\n[Mit Twitch anmelden](command:twitchPlayer.signIn)\nLurk liest die Kanäle, denen du folgst, und deine Emotes und sendet nur die Nachrichten, die du schreibst.",
+  "command.showVideos": "Vergangene Übertragungen anzeigen…",
+  "command.signIn": "Mit Twitch anmelden",
+  "command.signOut": "Von Twitch abmelden",
+  "command.refreshFollowing": "Aktualisieren",
+  "command.watchChannel": "Ansehen",
+  "config.twitchClientId": "Client-ID deiner eigenen [Twitch-Anwendung](https://dev.twitch.tv/console/apps) (Client-Typ *Öffentlich*) für die Anmeldung. Leer lassen, um die von Lurk zu verwenden."
 }

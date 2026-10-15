@@ -7,12 +7,14 @@ describe('isAllowedStreamUrl', () => {
     expect(isAllowedStreamUrl('https://use23.playlist.ttvnw.net/v1/playlist/abc.m3u8')).toBe(true);
     expect(isAllowedStreamUrl('https://a.j.cloudfront.hls.ttvnw.net/v1/segment/x.ts')).toBe(true);
     expect(isAllowedStreamUrl('https://4d1a8e.rufio.hls.live-video.net/v1/segment/x')).toBe(true);
+    expect(isAllowedStreamUrl('https://d3fi1amfgojobc.cloudfront.net/abc/360p30/0.ts')).toBe(true);
   });
 
   it('refuses anything else', () => {
     expect(isAllowedStreamUrl('http://usher.ttvnw.net/x')).toBe(false);
     expect(isAllowedStreamUrl('https://evil.example/ttvnw.net')).toBe(false);
     expect(isAllowedStreamUrl('https://ttvnw.net.evil.example/x')).toBe(false);
+    expect(isAllowedStreamUrl('https://cloudfront.net.evil.example/x')).toBe(false);
     expect(isAllowedStreamUrl('file:///etc/passwd')).toBe(false);
     expect(isAllowedStreamUrl('not a url')).toBe(false);
   });

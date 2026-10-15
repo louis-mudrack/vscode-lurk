@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseChannelInput } from '../../src/shared/channelInput';
+import { parseChannelInput, parseTimestamp, parseWatchInput } from '../../src/shared/channelInput';
 
 describe('parseChannelInput', () => {
   it.each([
@@ -20,4 +20,41 @@ describe('parseChannelInput', () => {
       expect(parseChannelInput(input)).toBeUndefined();
     },
   );
+});
+
+describe('parseWatchInput', () => {
+  it.each([
+    ['papaplatte', { type: 'channel', login: 'papaplatte' }],
+    ['https://www.twitch.tv/videos/2900363117', { type: 'video', id: '2900363117' }],
+    ['twitch.tv/videos/2900363117?t=1h2m3s', { type: 'video', id: '2900363117', startAt: 3723 }],
+    ['https://m.twitch.tv/videos/123?t=95s', { type: 'video', id: '123', startAt: 95 }],
+  ])('reads %j', (input, expected) => {
+    expect(parseWatchInput(input)).toEqual(expected);
+  });
+
+  it.each(['twitch.tv/videos/', 'twitch.tv/videos/abc', 'https://youtube.com/videos/1'])(
+    'rejects %j',
+    (input) => {
+      expect(parseWatchInput(input)).toBeUndefined();
+    },
+  );
+
+  it('does not mistake a video link for a channel', () => {
+    expect(parseChannelInput('https://www.twitch.tv/videos/2900363117')).toBeUndefined();
+  });
+});
+
+describe('parseTimestamp', () => {
+  it.each([
+    ['1h2m3s', 3723],
+    ['15m', 900],
+    ['95s', 95],
+    ['42', 42],
+  ])('reads %j as %d seconds', (value, seconds) => {
+    expect(parseTimestamp(value)).toBe(seconds);
+  });
+
+  it.each([null, '', 'soon'])('ignores %j', (value) => {
+    expect(parseTimestamp(value)).toBeUndefined();
+  });
 });

@@ -9,11 +9,15 @@ import { fetchStreamResource } from '../net/streamFetch';
 import type { ChannelSession } from '../session/channelSession';
 import type { PlayerPreferenceStore } from '../session/playerPreferences';
 import type { RecentChannels } from '../session/recentChannels';
+import type { VideoProgress } from '../session/videoProgress';
 import { searchChannels } from '../twitch/channelSearch';
+import { listChannelVideos } from '../twitch/videos';
 import { localResourceRoots, renderWebviewPage } from './webviewPage';
 
 export interface PlayerViewHooks {
   openChannel(input: string): void;
+  openVideo(id: string): void;
+  showVideos(): void;
   showChat(): void;
   openInBrowser(): void;
   onReady(): void;
@@ -31,6 +35,7 @@ export class PlayerViewProvider implements vscode.WebviewViewProvider, vscode.Di
     private readonly session: ChannelSession,
     private readonly recent: RecentChannels,
     private readonly preferences: PlayerPreferenceStore,
+    private readonly videoProgress: VideoProgress,
     private readonly hooks: PlayerViewHooks,
     private readonly log: Logger,
   ) {
@@ -85,6 +90,12 @@ export class PlayerViewProvider implements vscode.WebviewViewProvider, vscode.Di
       case 'openChannel':
         this.hooks.openChannel(message.input);
         break;
+      case 'openVideo':
+        this.hooks.openVideo(message.id);
+        break;
+      case 'showVideos':
+        this.hooks.showVideos();
+        break;
       case 'stop':
         this.session.stop();
         break;
@@ -108,6 +119,17 @@ export class PlayerViewProvider implements vscode.WebviewViewProvider, vscode.Di
           .then((suggestions) =>
             this.post({ type: 'channelSuggestions', requestId: message.requestId, suggestions }),
           );
+        break;
+      case 'listVideos':
+        void listChannelVideos(message.login)
+          .catch((error: unknown) => {
+            this.log.warn(`Loading the videos of ${message.login} failed: ${String(error)}`);
+            return [];
+          })
+          .then((videos) => this.post({ type: 'videos', requestId: message.requestId, videos }));
+        break;
+      case 'videoProgress':
+        void this.videoProgress.save(message.id, message.position, message.duration);
         break;
       case 'playbackFailed':
         void this.session.handlePlaybackFailure(message.reason);

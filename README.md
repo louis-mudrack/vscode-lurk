@@ -10,7 +10,8 @@
 
 **Lurk** puts a Twitch livestream into a small panel in VS Code's Explorer – right below Outline and
 Timeline – with the chat in a second panel. When the streamer raids someone, Lurk follows along to
-the next channel.
+the next channel. Past broadcasts play there too, and once you sign in you see who of the channels
+you follow is live and can chat.
 
 <p align="center">
   <img src="media/brand/preview.png" alt="Lurk in the VS Code sidebar: a live stream with controls above the chat" width="900">
@@ -28,7 +29,14 @@ the next channel.
   and show who raided whom. Prefer to decide yourself? Turn off `twitchPlayer.followRaids` and you
   get a notification with a _Watch_ button instead.
 - **Chat with 7TV emotes** – Twitch emotes, 7TV global and channel emotes (including zero-width
-  overlays), badges, mentions and links, readable name colors in every theme. Read-only.
+  overlays), badges, mentions and links, readable name colors in every theme.
+- **Write in chat** – after signing in: emote completion like Chatterino (type `:kek` or press
+  <kbd>Tab</kbd>) with your Twitch emotes and the channel's 7TV emotes, `@name` completion,
+  <kbd>↑</kbd> for your last message, and messages that mention you are highlighted.
+- **Channels you follow** – the _Twitch Following_ panel lists them, live ones first with game and
+  viewer count. Click one to watch it.
+- **Past broadcasts** – offline channels list their latest broadcasts; play them with a seek bar,
+  and Lurk remembers where you stopped. `twitch.tv/videos/…` links work too, including `?t=1h2m`.
 - **Keeps playing in the background** – collapse the panel, switch to Search or Source Control, or
   minimize VS Code: the sound keeps going.
 - **Picture-in-picture** – double-click the video for a floating window.
@@ -57,7 +65,18 @@ Requires VS Code 1.95 or newer.
    other, into the bottom panel or into the secondary sidebar.
 
 The panel's title bar has buttons to open another channel, show the chat, open the stream on
-twitch.tv and stop. Recently watched channels are listed on the start screen.
+twitch.tv and stop; its <kbd>…</kbd> menu lists the channel's past broadcasts. Recently watched
+channels are listed on the start screen.
+
+### Signing in (optional)
+
+Expand **Twitch Following** and click **Sign in with Twitch**, or run **Lurk: Sign in with Twitch**.
+Lurk opens twitch.tv with a code already filled in; confirm it there and you are signed in. You can
+sign out from the panel's <kbd>…</kbd> menu or from VS Code's _Accounts_ menu.
+
+Lurk asks Twitch for three permissions: read the channels you follow (`user:read:follows`), read
+your emotes for completion (`user:read:emotes`) and send the chat messages you write
+(`user:write:chat`).
 
 ## Settings
 
@@ -67,18 +86,24 @@ twitch.tv and stop. Recently watched channels are listed on the start screen.
 | `twitchPlayer.quality`           | `auto`  | Preferred quality: `auto`, `1080p`, `720p`, `480p`, `360p` or `160p`. |
 | `twitchPlayer.resumeLastChannel` | `false` | Reopen the last channel when VS Code starts.                          |
 | `twitchPlayer.chat.maxMessages`  | `200`   | Number of chat messages kept in the chat panel.                       |
+| `twitchPlayer.twitchClientId`    | (empty) | Client ID of your own Twitch application for signing in (forks).      |
 
 ## Good to know
 
-- **No account, no tracking.** Lurk does not log in to Twitch and collects no data. It only talks
-  to Twitch (`gql.twitch.tv`, `usher.ttvnw.net` and the video CDN, `hermes.twitch.tv` for raids,
-  `irc-ws.chat.twitch.tv` for chat, `static-cdn.jtvnw.net` for emotes and badges) and to 7TV
-  (`7tv.io`, `cdn.7tv.app`).
-- **Unofficial endpoints.** Lurk uses the same public, unauthenticated endpoints the twitch.tv
-  website uses, like other third-party players do. They are not an official API, so Twitch can
-  change them at any time and something may stop working until Lurk is updated.
+- **No tracking, account optional.** Lurk collects no data. Watching needs no account. If you sign
+  in, the Twitch token stays in VS Code's secret storage (your system keychain), is only sent to
+  Twitch and is revoked when you sign out. Lurk only talks to Twitch (`gql.twitch.tv`,
+  `usher.ttvnw.net` and the video CDNs, `hermes.twitch.tv` for raids, `irc-ws.chat.twitch.tv` for
+  chat, `static-cdn.jtvnw.net` for emotes and badges, and `id.twitch.tv` and `api.twitch.tv` when
+  signed in) and to 7TV (`7tv.io`, `cdn.7tv.app`).
+- **Unofficial endpoints.** For playback Lurk uses the same public, unauthenticated endpoints the
+  twitch.tv website uses, like other third-party players do. They are not an official API, so Twitch
+  can change them at any time and something may stop working until Lurk is updated. Everything that
+  needs your account uses Twitch's official API.
 - **Ads** play the way they do on twitch.tv; an _Ad break_ badge shows while they run.
-- **Chat is read-only.** Use the _Chat on twitch.tv_ link to write messages.
+- **No channel points.** Twitch only awards and lets you claim channel points in its own apps, so
+  watching in Lurk does not earn them.
+- **No chat replay for past broadcasts.** The chat panel shows live chat only.
 
 ## How it works
 
@@ -91,7 +116,8 @@ things:
   appends that to a real `SourceBuffer`. The `<video>` element therefore has a native audio track
   with native A/V sync, volume and background playback.
 - **Playlists:** Twitch rejects playlist requests from a webview origin, so the extension host
-  fetches the playlists and hands them to the webview. Video segments load directly.
+  fetches the playlists and hands them to the webview. Live video segments load directly; past
+  broadcasts come from a CDN that only answers twitch.tv, so the host fetches those segments too.
 - **Raids:** the extension host subscribes anonymously to the channel's raid topic on Twitch's
   "Hermes" push socket, the one twitch.tv uses itself.
 

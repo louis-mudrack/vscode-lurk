@@ -1,9 +1,12 @@
-import type { ChannelInfo, PlayerStatus } from '../../shared/protocol';
+import type { ChannelInfo, PlayerStatus, WatchTarget } from '../../shared/protocol';
 import { Emitter } from '../emitter';
 import type { Logger } from '../logger';
 import type { ChannelLookup } from '../twitch/channels';
+import type { VideoPlaylist } from '../twitch/playback';
 import type { RaidTarget } from '../twitch/raidEvents';
 import type { RaidWatch } from '../twitch/raidWatcher';
+import type { VideoLookup } from '../twitch/videos';
+import { RestartBudget } from './restartBudget';
 
 const REFRESH_INTERVAL_MS = 60_000;
 const MAX_PLAYBACK_RESTARTS = 3;
@@ -13,6 +16,8 @@ const PLAYBACK_RESTART_WINDOW_MS = 5 * 60_000;
 export interface SessionServices {
   lookupChannel(login: string): Promise<ChannelLookup | null>;
   resolvePlaylistUrl(login: string): Promise<string>;
+  lookupVideo(id: string): Promise<VideoLookup | null>;
+  resolveVideoPlaylist(id: string): Promise<VideoPlaylist>;
   watchRaids(channelId: string, onRaid: (target: RaidTarget) => void): RaidWatch;
 }
 
@@ -20,11 +25,15 @@ export interface SessionHooks {
   shouldFollowRaids(): boolean;
   onRaidNotFollowed(from: ChannelInfo, target: RaidTarget): void;
   rememberChannel(channel: ChannelInfo): Promise<void>;
+  /** Where the user stopped watching this video last time, in seconds. */
+  resumePosition(videoId: string): number | undefined;
 }
 
+type VideoStatus = Extract<PlayerStatus, { kind: 'video' }>;
+
 /**
- * Owns "what is being watched": resolves channels, hands playlist URLs to the
- * player, follows raids and notices when a stream ends or comes back.
+ * Owns "what is being watched": resolves channels and videos, hands playlist
+ * URLs to the player, follows raids and notices when a stream ends or comes back.
  */
 export class ChannelSession {
   private readonly statusEmitter = new Emitter<PlayerStatus>();
@@ -34,7 +43,7 @@ export class ChannelSession {
   /** Bumped on every navigation so results of superseded requests are dropped. */
   private navigation = 0;
   private playbackId = 0;
-  private restartTimestamps: number[] = [];
+  private readonly restarts = new RestartBudget(MAX_PLAYBACK_RESTARTS, PLAYBACK_RESTART_WINDOW_MS);
   private raidWatch: { channelId: string; watch: RaidWatch } | undefined;
   private readonly refreshTimer: NodeJS.Timeout;
 
@@ -52,7 +61,9 @@ export class ChannelSession {
 
   get channel(): ChannelInfo | undefined {
     const status = this.currentStatus;
-    return status.kind === 'live' || status.kind === 'offline' ? status.channel : undefined;
+    return status.kind === 'live' || status.kind === 'offline' || status.kind === 'video'
+      ? status.channel
+      : undefined;
   }
 
   get isWatchingRaids(): boolean {
@@ -60,9 +71,8 @@ export class ChannelSession {
   }
 
   async open(login: string, raidedFrom?: string): Promise<void> {
-    const navigation = ++this.navigation;
-    this.restartTimestamps = [];
-    this.setStatus({ kind: 'loading', login });
+    const target: WatchTarget = { type: 'channel', login };
+    const navigation = this.beginNavigation(target);
     try {
       const lookup = await this.services.lookupChannel(login);
       if (navigation !== this.navigation) {
@@ -70,7 +80,7 @@ export class ChannelSession {
       }
       if (!lookup) {
         this.stopWatchingRaids();
-        this.setStatus({ kind: 'error', login, reason: 'notFound' });
+        this.setStatus({ kind: 'error', target, reason: 'notFound' });
         return;
       }
       await this.hooks.rememberChannel(lookup.channel);
@@ -79,7 +89,44 @@ export class ChannelSession {
     } catch (error) {
       if (navigation === this.navigation) {
         this.log.error(`Opening ${login} failed: ${String(error)}`);
-        this.setStatus({ kind: 'error', login, reason: 'unreachable' });
+        this.setStatus({ kind: 'error', target, reason: 'unreachable' });
+      }
+    }
+  }
+
+  /** Plays a past broadcast, by default from where the user left off. */
+  async openVideo(id: string, startAt?: number): Promise<void> {
+    const target: WatchTarget = { type: 'video', id };
+    const navigation = this.beginNavigation(target);
+    this.stopWatchingRaids();
+    try {
+      const lookup = await this.services.lookupVideo(id);
+      if (navigation !== this.navigation) {
+        return;
+      }
+      if (!lookup) {
+        this.setStatus({ kind: 'error', target, reason: 'notFound' });
+        return;
+      }
+      const playlist = await this.services.resolveVideoPlaylist(id);
+      if (navigation !== this.navigation) {
+        return;
+      }
+      if (playlist.kind === 'subscribersOnly') {
+        this.setStatus({ kind: 'error', target, reason: 'subscribersOnly' });
+        return;
+      }
+      this.setStatus({
+        kind: 'video',
+        channel: lookup.channel,
+        video: lookup.video,
+        playback: { id: ++this.playbackId, url: playlist.url },
+        startAt: startAt ?? this.hooks.resumePosition(id) ?? 0,
+      });
+    } catch (error) {
+      if (navigation === this.navigation) {
+        this.log.error(`Opening video ${id} failed: ${String(error)}`);
+        this.setStatus({ kind: 'error', target, reason: 'unreachable' });
       }
     }
   }
@@ -92,16 +139,30 @@ export class ChannelSession {
 
   async retry(): Promise<void> {
     const status = this.currentStatus;
-    if (status.kind === 'error' || status.kind === 'loading') {
-      await this.open(status.login);
-    } else if (status.kind === 'live' || status.kind === 'offline') {
-      await this.open(status.channel.login);
+    switch (status.kind) {
+      case 'loading':
+      case 'error':
+        await (status.target.type === 'channel'
+          ? this.open(status.target.login)
+          : this.openVideo(status.target.id));
+        break;
+      case 'live':
+      case 'offline':
+        await this.open(status.channel.login);
+        break;
+      case 'video':
+        await this.openVideo(status.video.id);
+        break;
     }
   }
 
   /** Called when the player gave up on the current playlist (stream ended, token expired, …). */
   async handlePlaybackFailure(reason: string): Promise<void> {
     const status = this.currentStatus;
+    if (status.kind === 'video') {
+      await this.restartVideo(status, reason);
+      return;
+    }
     if (status.kind !== 'live') {
       return;
     }
@@ -116,8 +177,9 @@ export class ChannelSession {
         this.handleStreamEnded(status.channel);
         return;
       }
-      if (!this.allowRestart()) {
-        this.setStatus({ kind: 'error', login: status.channel.login, reason: 'playbackFailing' });
+      if (!this.restarts.tryConsume()) {
+        const target: WatchTarget = { type: 'channel', login: status.channel.login };
+        this.setStatus({ kind: 'error', target, reason: 'playbackFailing' });
         return;
       }
       await this.applyLookup(lookup, navigation, status.raidedFrom);
@@ -130,6 +192,45 @@ export class ChannelSession {
     clearInterval(this.refreshTimer);
     this.stopWatchingRaids();
     this.statusEmitter.dispose();
+  }
+
+  private beginNavigation(target: WatchTarget): number {
+    const navigation = ++this.navigation;
+    this.restarts.reset();
+    this.setStatus({ kind: 'loading', target });
+    return navigation;
+  }
+
+  /** Continues where the player stopped, with a fresh playlist (tokens expire). */
+  private async restartVideo(status: VideoStatus, reason: string): Promise<void> {
+    const { id } = status.video;
+    this.log.warn(`Playback of video ${id} failed: ${reason}`);
+    const target: WatchTarget = { type: 'video', id };
+    if (!this.restarts.tryConsume()) {
+      this.setStatus({ kind: 'error', target, reason: 'playbackFailing' });
+      return;
+    }
+    const navigation = this.navigation;
+    try {
+      const playlist = await this.services.resolveVideoPlaylist(id);
+      if (navigation !== this.navigation) {
+        return;
+      }
+      if (playlist.kind === 'subscribersOnly') {
+        this.setStatus({ kind: 'error', target, reason: 'subscribersOnly' });
+        return;
+      }
+      this.setStatus({
+        ...status,
+        playback: { id: ++this.playbackId, url: playlist.url },
+        startAt: this.hooks.resumePosition(id) ?? status.startAt,
+      });
+    } catch (error) {
+      if (navigation === this.navigation) {
+        this.log.error(`Reloading video ${id} failed: ${String(error)}`);
+        this.setStatus({ kind: 'error', target, reason: 'unreachable' });
+      }
+    }
   }
 
   private async applyLookup(
@@ -211,17 +312,6 @@ export class ChannelSession {
   private stopWatchingRaids(): void {
     this.raidWatch?.watch.dispose();
     this.raidWatch = undefined;
-  }
-
-  private allowRestart(now = Date.now()): boolean {
-    this.restartTimestamps = this.restartTimestamps.filter(
-      (timestamp) => now - timestamp < PLAYBACK_RESTART_WINDOW_MS,
-    );
-    if (this.restartTimestamps.length >= MAX_PLAYBACK_RESTARTS) {
-      return false;
-    }
-    this.restartTimestamps.push(now);
-    return true;
   }
 
   private setStatus(status: PlayerStatus): void {

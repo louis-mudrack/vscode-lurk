@@ -1,27 +1,15 @@
-import Hls, {
-  ErrorTypes,
-  Events,
-  type ErrorData,
-  type Fragment,
-  type FragmentLoaderContext,
-  type PlaylistLoaderContext,
-} from 'hls.js';
+import Hls, { ErrorTypes, Events, type ErrorData, type Fragment } from 'hls.js';
 import type { PlaybackDiagnostics, QualityPreference } from '../../shared/protocol';
 import {
   installAudioInterception,
   setTranscodingErrorReporter,
   transcodingFailures,
 } from './audio/audioInterception';
-import { createFragmentLoader, createHostLoader, type LoaderClass } from './hlsLoaders';
+import { hlsConfigFor, type PlaybackMode } from './hlsConfig';
 import type { HostBridge } from './hostBridge';
-import { stripStartOffset } from './playlistRewrite';
 import { AUTO_LEVEL, levelIndexForPreference, levelLabel } from './qualityLevels';
 
 const MAX_MEDIA_RECOVERIES = 3;
-/** Seconds behind live; close to twitch.tv's normal-latency mode, so chat matches the picture. */
-const LIVE_SYNC_SECONDS = 6;
-/** Falling further behind (e.g. after a long stall) jumps back to the live sync point. */
-const MAX_LATENCY_SECONDS = 30;
 const AD_SEGMENT_TITLE = /amazon|stitched-ad/i;
 
 export interface QualityOption {
@@ -42,6 +30,12 @@ export interface StreamPlayerListener {
   onPlaybackFailed(reason: string): void;
 }
 
+function describeError(data: ErrorData): string {
+  const buffer = data.sourceBufferName ? ` (${data.sourceBufferName})` : '';
+  const cause = data.error?.message ? `: ${data.error.message}` : '';
+  return `${data.type}: ${data.details}${buffer}${cause}`;
+}
+
 function isAdFragment(fragment: Fragment): boolean {
   return AD_SEGMENT_TITLE.test(fragment.title ?? '');
 }
@@ -59,6 +53,7 @@ function hasUserActivation(): boolean {
 /** hls.js driven playback; AAC audio is transcoded to FLAC on the fly (see audio/). */
 export class StreamPlayer {
   private hls: Hls | undefined;
+  private mode: PlaybackMode = { kind: 'live' };
   private preference: QualityPreference = 'auto';
   private volume = 0.5;
   private muted = false;
@@ -76,7 +71,11 @@ export class StreamPlayer {
     });
     // Start muted: Chromium only allows audible playback after a click in this webview.
     video.muted = true;
-    video.addEventListener('ended', () => this.fail('stream ended'));
+    video.addEventListener('ended', () => {
+      if (this.mode.kind === 'live') {
+        this.fail('stream ended');
+      }
+    });
   }
 
   /** The user wants sound but has not clicked into the webview yet. */
@@ -84,27 +83,27 @@ export class StreamPlayer {
     return !this.muted && !hasUserActivation() && !this.video.paused;
   }
 
-  load(url: string, preference: QualityPreference): void {
+  get currentTime(): number {
+    return this.video.currentTime;
+  }
+
+  /** Frames are advancing, so the position is meaningful (not 0 before the start seek). */
+  get isPlaying(): boolean {
+    const video = this.video;
+    return !video.paused && !video.ended && video.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA;
+  }
+
+  get duration(): number {
+    return this.video.duration;
+  }
+
+  load(url: string, preference: QualityPreference, mode: PlaybackMode): void {
     this.destroyHls();
+    this.mode = mode;
     this.preference = preference;
     this.mediaRecoveries = 0;
     this.lastError = null;
-    const hls = new Hls({
-      enableWorker: false,
-      lowLatencyMode: false,
-      preferManagedMediaSource: false,
-      capLevelToPlayerSize: true,
-      backBufferLength: 10,
-      maxBufferLength: 12,
-      liveSyncDuration: LIVE_SYNC_SECONDS,
-      liveMaxLatencyDuration: MAX_LATENCY_SECONDS,
-      pLoader: createHostLoader<PlaylistLoaderContext>(this.host, stripStartOffset),
-      fLoader: createFragmentLoader<FragmentLoaderContext>(
-        // hls.js types its default loader for the base context; it serves fragments too.
-        Hls.DefaultConfig.loader as LoaderClass<FragmentLoaderContext>,
-        createHostLoader<FragmentLoaderContext>(this.host),
-      ),
-    });
+    const hls = new Hls(hlsConfigFor(mode, this.host));
     hls.on(Events.MANIFEST_PARSED, () => {
       this.applyPreference(false);
       this.video.play().catch(() => undefined);
@@ -130,12 +129,18 @@ export class StreamPlayer {
     if (this.video.paused) {
       // Jump back to the live edge instead of resuming minutes behind.
       const liveEdge = this.hls?.liveSyncPosition;
-      if (liveEdge && Number.isFinite(liveEdge)) {
+      if (this.mode.kind === 'live' && liveEdge && Number.isFinite(liveEdge)) {
         this.video.currentTime = liveEdge;
       }
       this.video.play().catch(() => undefined);
     } else {
       this.video.pause();
+    }
+  }
+
+  seek(seconds: number): void {
+    if (this.mode.kind === 'video') {
+      this.video.currentTime = seconds;
     }
   }
 
@@ -177,7 +182,7 @@ export class StreamPlayer {
       videoPaused: video.paused,
       bufferedAhead: Math.max(0, bufferEnd - video.currentTime),
       readyState: video.readyState,
-      latency: this.hls?.latency ?? null,
+      latency: this.mode.kind === 'live' ? (this.hls?.latency ?? null) : null,
       droppedFrames: video.getVideoPlaybackQuality().droppedVideoFrames,
       audioMuted: video.muted,
       audioDecodedBytes: decodedAudioBytes(video),
@@ -217,7 +222,7 @@ export class StreamPlayer {
   }
 
   private handleError(data: ErrorData): void {
-    this.lastError = `${data.type}: ${data.details}`;
+    this.lastError = describeError(data);
     if (!data.fatal) {
       return;
     }
@@ -226,7 +231,7 @@ export class StreamPlayer {
       this.hls?.recoverMediaError();
       return;
     }
-    this.fail(`${data.type}: ${data.details}`);
+    this.fail(describeError(data));
   }
 
   private fail(reason: string): void {

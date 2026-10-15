@@ -1,12 +1,13 @@
 import * as vscode from 'vscode';
-import { parseChannelInput } from '../../shared/channelInput';
+import { parseWatchInput } from '../../shared/channelInput';
 import type { ChannelSuggestion, RecentChannel } from '../../shared/protocol';
 import { searchChannels } from '../twitch/channelSearch';
 
 const SEARCH_DELAY_MS = 250;
 
 interface ChannelItem extends vscode.QuickPickItem {
-  login: string;
+  /** What gets opened: a channel login or a video link. */
+  input: string;
 }
 
 function liveDescription(suggestion: ChannelSuggestion): string {
@@ -29,7 +30,7 @@ function suggestionItem(suggestion: ChannelSuggestion): ChannelItem {
     description: suggestion.isLive ? liveDescription(suggestion) : vscode.l10n.t('Offline'),
     iconPath: new vscode.ThemeIcon(suggestion.isLive ? 'broadcast' : 'account'),
     alwaysShow: true,
-    login: suggestion.login,
+    input: suggestion.login,
   };
 }
 
@@ -38,7 +39,17 @@ function typedItem(login: string): ChannelItem {
     label: vscode.l10n.t('Watch "{0}"', login),
     iconPath: new vscode.ThemeIcon('play'),
     alwaysShow: true,
-    login,
+    input: login,
+  };
+}
+
+function videoLinkItem(link: string): ChannelItem {
+  return {
+    label: vscode.l10n.t('Play this video'),
+    description: link,
+    iconPath: new vscode.ThemeIcon('device-camera-video'),
+    alwaysShow: true,
+    input: link,
   };
 }
 
@@ -47,11 +58,14 @@ function recentItem(channel: RecentChannel): ChannelItem {
     label: channel.displayName,
     description: vscode.l10n.t('Recently watched'),
     iconPath: new vscode.ThemeIcon('history'),
-    login: channel.login,
+    input: channel.login,
   };
 }
 
-/** Asks for a channel and suggests matching channels while typing, like twitch.tv's search box. */
+/**
+ * Asks for a channel (or a video link) and suggests matching channels while
+ * typing, like twitch.tv's search box. Resolves with input for `parseWatchInput`.
+ */
 export function pickChannel(recent: RecentChannel[]): Promise<string | undefined> {
   return new Promise((resolve) => {
     const pick = vscode.window.createQuickPick<ChannelItem>();
@@ -74,8 +88,13 @@ export function pickChannel(recent: RecentChannel[]): Promise<string | undefined
     pick.onDidChangeValue((value) => {
       clearTimeout(searchTimer);
       const sequence = ++searchSequence;
-      const login = parseChannelInput(value);
+      const parsed = parseWatchInput(value);
       pick.busy = false;
+      if (parsed?.type === 'video') {
+        pick.items = [videoLinkItem(value.trim())];
+        return;
+      }
+      const login = parsed?.login;
       if (!value.trim() || !login) {
         pick.items = value.trim() ? [] : recentItems;
         return;
@@ -95,9 +114,10 @@ export function pickChannel(recent: RecentChannel[]): Promise<string | undefined
     });
 
     pick.onDidAccept(() => {
-      const login = pick.selectedItems[0]?.login ?? parseChannelInput(pick.value);
-      if (login) {
-        resolve(login);
+      const typed = parseWatchInput(pick.value) ? pick.value.trim() : undefined;
+      const input = pick.selectedItems[0]?.input ?? typed;
+      if (input) {
+        resolve(input);
         pick.hide();
       }
     });
