@@ -35,7 +35,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: gh release create "$GITHUB_REF_NAME" ./*.vsix --title "Lurk $GITHUB_REF_NAME" --notes-file release-notes.md
 
-  # Runs only once Microsoft Entra ID publishing is set up (see CONTRIBUTING.md);
+  # Runs only once Microsoft Entra ID publishing is set up (see docs/releasing.md);
   # Azure DevOps no longer issues the global PATs the Marketplace needs.
   marketplace:
     needs: release
