@@ -97,11 +97,10 @@ Chatnachrichten senden (`user:write:chat`).
   Raids, `irc-ws.chat.twitch.tv` für den Chat, `static-cdn.jtvnw.net` für Emotes und Badges sowie
   `id.twitch.tv` und `api.twitch.tv`, wenn du angemeldet bist) und mit 7TV (`7tv.io`,
   `cdn.7tv.app`).
-- **Inoffizielle Schnittstellen.** Für die Wiedergabe nutzt Lurk dieselben öffentlichen
-  Schnittstellen ohne Anmeldung wie die Website twitch.tv, so wie andere Drittanbieter-Player auch.
-  Sie sind keine offizielle API; Twitch kann sie jederzeit ändern, und dann funktioniert etwas
-  eventuell erst nach einem Update wieder. Alles, was dein Konto braucht, läuft über die offizielle
-  API von Twitch.
+- **Schnittstellen der Website.** Für die Wiedergabe nutzt Lurk dieselben öffentlichen
+  Schnittstellen wie die Website twitch.tv, so wie andere Drittanbieter-Player auch. Sie sind keine
+  dokumentierte API; Twitch kann sie jederzeit ändern, und dann funktioniert etwas eventuell erst
+  nach einem Update wieder. Alles, was dein Konto braucht, läuft über die offizielle API von Twitch.
 - **Werbung** läuft wie auf twitch.tv; währenddessen zeigt der Player „Werbepause“ an.
 - **Keine Kanalpunkte.** Twitch vergibt Kanalpunkte nur in den eigenen Apps und lässt sie nur dort
   einsammeln; in Lurk zu schauen bringt daher keine.
