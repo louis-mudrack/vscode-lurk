@@ -53,7 +53,6 @@ export class TwitchIrcConnection {
     this.socket = socket;
     socket.addEventListener('open', () => {
       socket.send('CAP REQ :twitch.tv/tags twitch.tv/commands');
-      socket.send('PASS SCHMOOPIIE');
       socket.send(`NICK justinfan${Math.floor(Math.random() * ANONYMOUS_NICK_RANGE) + 1000}`);
       if (this.channel) {
         socket.send(`JOIN #${this.channel}`);

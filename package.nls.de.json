@@ -1,6 +1,6 @@
 {
   "displayName": "Lurk – Twitch-Streams in der Seitenleiste",
-  "description": "Twitch-Livestreams und vergangene Übertragungen in einem kleinen VS-Code-Panel schauen, mit Chat, 7TV-Emotes, automatischem Folgen bei Raids und den Kanälen, denen du folgst.",
+  "description": "Twitch-Livestreams und vergangene Übertragungen in einem kleinen VS-Code-Panel schauen, mit Chat, 7TV-Emotes und den Kanälen, denen du folgst.",
   "view.player": "Twitch",
   "view.chat": "Twitch-Chat",
   "command.openChannel": "Twitch-Kanal öffnen…",

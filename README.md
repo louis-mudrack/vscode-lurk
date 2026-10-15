@@ -96,10 +96,10 @@ your emotes for completion (`user:read:emotes`) and send the chat messages you w
   `usher.ttvnw.net` and the video CDNs, `hermes.twitch.tv` for raids, `irc-ws.chat.twitch.tv` for
   chat, `static-cdn.jtvnw.net` for emotes and badges, and `id.twitch.tv` and `api.twitch.tv` when
   signed in) and to 7TV (`7tv.io`, `cdn.7tv.app`).
-- **Unofficial endpoints.** For playback Lurk uses the same public, unauthenticated endpoints the
-  twitch.tv website uses, like other third-party players do. They are not an official API, so Twitch
-  can change them at any time and something may stop working until Lurk is updated. Everything that
-  needs your account uses Twitch's official API.
+- **Website endpoints.** For playback Lurk uses the same public endpoints as the twitch.tv website,
+  like other third-party players do. They are not a documented API, so Twitch can change them at any
+  time and something may stop working until Lurk is updated. Everything that needs your account uses
+  Twitch's official API.
 - **Ads** play the way they do on twitch.tv; an _Ad break_ badge shows while they run.
 - **No channel points.** Twitch only awards and lets you claim channel points in its own apps, so
   watching in Lurk does not earn them.
@@ -107,17 +107,16 @@ your emotes for completion (`user:read:emotes`) and send the chat messages you w
 
 ## How it works
 
-VS Code's built-in Chromium cannot play Twitch streams out of the box, so Lurk works around three
-things:
+Playing Twitch inside VS Code takes three extra pieces:
 
 - **Audio:** VS Code ships without an AAC decoder, Twitch's audio codec, so streams would play
   silently. Lurk hands hls.js a stand-in for its audio `SourceBuffer` that decodes AAC with a
   WebAssembly build of FAAD2, re-encodes it as lossless FLAC (which VS Code _can_ decode) and
   appends that to a real `SourceBuffer`. The `<video>` element therefore has a native audio track
   with native A/V sync, volume and background playback.
-- **Playlists:** Twitch rejects playlist requests from a webview origin, so the extension host
-  fetches the playlists and hands them to the webview. Live video segments load directly; past
-  broadcasts come from a CDN that only answers twitch.tv, so the host fetches those segments too.
+- **Playlists:** the extension host loads the playlists and hands them to the webview, because
+  Twitch does not serve them to VS Code webviews. Live video segments load directly; segments of
+  past broadcasts go through the extension host as well.
 - **Raids:** the extension host subscribes anonymously to the channel's raid topic on Twitch's
   "Hermes" push socket, the one twitch.tv uses itself.
 
