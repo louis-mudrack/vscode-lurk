@@ -64,5 +64,5 @@ so it has no secret and its client ID can live in the source code. One-time setu
 3. Open the application with **Manage** and copy its **Client ID** into `LURK_CLIENT_ID` in
    `src/host/auth/twitchApp.ts`.
 
-Until then, signing in only works after entering a client ID in the `twitchPlayer.twitchClientId`
-setting.
+Lurk's own application is registered and its ID is in the code. Forks register their own, or users
+enter another client ID in the `twitchPlayer.twitchClientId` setting.
