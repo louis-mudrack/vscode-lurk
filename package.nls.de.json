@@ -1,6 +1,6 @@
 {
   "displayName": "Lurk – Twitch-Streams in der Seitenleiste",
-  "description": "Twitch-Livestreams in einem kleinen VS-Code-Panel schauen, mit Chat, 7TV-Emotes und automatischem Folgen bei Raids. Auch bekannt als Arbeitszeitbetrug.",
+  "description": "Twitch-Livestreams in einem kleinen VS-Code-Panel schauen, mit Chat, 7TV-Emotes und automatischem Folgen bei Raids.",
   "view.player": "Twitch",
   "view.chat": "Twitch-Chat",
   "command.openChannel": "Twitch-Kanal öffnen…",
