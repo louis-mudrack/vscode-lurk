@@ -37,8 +37,8 @@ fraud”).
 
 ## Install
 
-- **Visual Studio Marketplace / Open VSX:** search for “Lurk” in the Extensions view once it is
-  published there.
+- **Visual Studio Marketplace:** search for “Lurk” in the Extensions view once it is published
+  there.
 - **From a release:** download the `.vsix` from the
   [releases page](https://github.com/louis-mudrack/twitch-video-player-vsc-extension/releases) and
   run **Extensions: Install from VSIX…** in VS Code.

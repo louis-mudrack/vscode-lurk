@@ -33,8 +33,8 @@ Wenn der Streamer jemanden raidet, wechselt Lurk automatisch zum nächsten Kanal
 
 ## Installation
 
-- **Visual Studio Marketplace / Open VSX:** in der Erweiterungsansicht nach „Lurk“ suchen, sobald
-  die Erweiterung dort veröffentlicht ist.
+- **Visual Studio Marketplace:** in der Erweiterungsansicht nach „Lurk“ suchen, sobald die
+  Erweiterung dort veröffentlicht ist.
 - **Aus einem Release:** die `.vsix` von der
   [Release-Seite](https://github.com/louis-mudrack/twitch-video-player-vsc-extension/releases)
   herunterladen und in VS Code **Erweiterungen: Aus VSIX installieren…** ausführen.
