@@ -1,0 +1,45 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      VSCE_PAT: ${{ secrets.VSCE_PAT }}
+      OVSX_PAT: ${{ secrets.OVSX_PAT }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - name: Tag matches package.json version
+        run: test "v$(node -p "require('./package.json').version")" = "$GITHUB_REF_NAME"
+      - run: npm run package
+      - name: Release notes from CHANGELOG.md
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          awk -v heading="## [$version]" '
+            index($0, heading) == 1 { found = 1; next }
+            found && /^## / { exit }
+            found && !/^\[/ { print }
+          ' CHANGELOG.md > release-notes.md
+          test -s release-notes.md
+      - name: GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" ./*.vsix --title "Lurk $GITHUB_REF_NAME" --notes-file release-notes.md
+      - name: Visual Studio Marketplace
+        if: env.VSCE_PAT != ''
+        run: npx vsce publish --packagePath ./*.vsix
+      - name: Open VSX
+        if: env.OVSX_PAT != ''
+        run: npx --yes ovsx@1.2.0 publish ./*.vsix

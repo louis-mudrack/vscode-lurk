@@ -1,0 +1,42 @@
+name: Bug report
+description: Something does not work as expected.
+labels: [bug]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: input
+    id: channel
+    attributes:
+      label: Channel
+      description: The Twitch channel you were watching, if it matters.
+  - type: input
+    id: vscode-version
+    attributes:
+      label: VS Code version
+      description: From Help → About, e.g. 1.105.0.
+    validations:
+      required: true
+  - type: input
+    id: extension-version
+    attributes:
+      label: Lurk version
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options: [Windows, macOS, Linux, Other]
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Log output
+      description: View → Output, then pick “Lurk” from the list. Paste its content here.
+      render: text
