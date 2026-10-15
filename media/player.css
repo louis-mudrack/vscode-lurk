@@ -163,6 +163,20 @@ button {
   gap: var(--gap);
 }
 
+.start-screen {
+  padding: 10px 12px 12px;
+}
+
+.start-screen .channel-picker {
+  max-width: none;
+  margin-top: 0;
+}
+
+.start-hint {
+  margin: 12px 0 0;
+  color: var(--vscode-descriptionForeground);
+}
+
 .channel-picker {
   width: 100%;
   max-width: 360px;
@@ -193,6 +207,87 @@ button {
 .channel-input:focus {
   outline: 1px solid var(--vscode-focusBorder);
   outline-offset: -1px;
+}
+
+.channel-field {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+}
+
+.channel-field .channel-input {
+  width: 100%;
+}
+
+.suggestions {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  z-index: 3;
+  max-height: 264px;
+  margin: 0;
+  padding: 4px 0;
+  overflow-y: auto;
+  list-style: none;
+  border: 1px solid
+    var(--vscode-editorSuggestWidget-border, var(--vscode-widget-border, transparent));
+  border-radius: var(--radius);
+  background: var(--vscode-editorSuggestWidget-background, var(--vscode-menu-background, #252526));
+  color: var(--vscode-editorSuggestWidget-foreground, var(--vscode-foreground));
+  box-shadow: 0 2px 8px var(--vscode-widget-shadow, rgba(0, 0, 0, 0.36));
+}
+
+.suggestion {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: 8px;
+  align-items: center;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.suggestion .avatar {
+  grid-row: span 2;
+  width: 26px;
+  height: 26px;
+}
+
+.suggestion:hover,
+.suggestion.active {
+  background: var(
+    --vscode-editorSuggestWidget-selectedBackground,
+    var(--vscode-list-activeSelectionBackground)
+  );
+  color: var(--vscode-editorSuggestWidget-selectedForeground, inherit);
+}
+
+.suggestion-name,
+.suggestion-meta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.suggestion-name {
+  font-weight: 600;
+}
+
+.suggestion-meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.85em;
+  color: var(--vscode-descriptionForeground);
+}
+
+.live-dot {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--live);
 }
 
 .picker-error {

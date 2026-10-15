@@ -93,6 +93,9 @@ export class PlayerApp {
       case 'fetchResult':
         this.host.resolveFetch(message.requestId, message.result);
         break;
+      case 'channelSuggestions':
+        this.host.resolveSearch(message.requestId, message.suggestions);
+        break;
     }
   }
 
@@ -135,12 +138,14 @@ export class PlayerApp {
   private screenFor(status: Exclude<PlayerStatus, { kind: 'live' }>): HTMLElement {
     switch (status.kind) {
       case 'idle':
-        return createStatusScreen({
-          iconPath: ICONS.screen,
-          title: l10n.t('Watch a Twitch stream'),
-          detail: l10n.t('When the channel raids someone, the player follows along.'),
-          footer: this.channelPicker(),
-        });
+        // The panel starts out short, so the channel input comes first.
+        return el('section', { className: 'start-screen' }, [
+          this.channelPicker(),
+          el('p', {
+            className: 'start-hint',
+            text: l10n.t('When the channel raids someone, the player follows along.'),
+          }),
+        ]);
       case 'loading':
         return createStatusScreen({ busy: true, title: l10n.t('Opening {0}…', status.login) });
       case 'offline':
@@ -163,6 +168,7 @@ export class PlayerApp {
   private channelPicker(): HTMLElement {
     return createChannelPicker({
       recent: this.recent,
+      search: (query) => this.host.searchChannels(query),
       onOpen: (login) => this.host.post({ type: 'openChannel', input: login }),
       onRemove: (login) => this.host.post({ type: 'removeRecent', login }),
     });

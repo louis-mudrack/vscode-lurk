@@ -8,6 +8,7 @@ import { resolveLivePlaylistUrl } from './host/twitch/playback';
 import type { RaidTarget } from './host/twitch/raidEvents';
 import { RaidWatcher } from './host/twitch/raidWatcher';
 import { ChatViewProvider } from './host/views/chatViewProvider';
+import { pickChannel } from './host/views/channelQuickPick';
 import { PlayerViewProvider } from './host/views/playerViewProvider';
 import { parseChannelInput } from './shared/channelInput';
 import type { ChannelInfo } from './shared/protocol';
@@ -113,16 +114,7 @@ export function activate(context: vscode.ExtensionContext): void {
       openChannel(initial);
       return;
     }
-    const input = await vscode.window.showInputBox({
-      title: vscode.l10n.t('Watch a Twitch channel'),
-      prompt: vscode.l10n.t('Channel name or twitch.tv link'),
-      placeHolder: vscode.l10n.t('e.g. {0}', 'papaplatte'),
-      value: recent.last()?.login ?? '',
-      validateInput: (value) =>
-        !value.trim() || parseChannelInput(value)
-          ? undefined
-          : vscode.l10n.t('Not a valid Twitch channel name'),
-    });
+    const input = await pickChannel(recent.list());
     if (input) {
       openChannel(input);
     }

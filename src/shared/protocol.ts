@@ -54,6 +54,15 @@ export interface RecentChannel {
   profileImageUrl: string;
 }
 
+export interface ChannelSuggestion {
+  login: string;
+  displayName: string;
+  profileImageUrl: string;
+  isLive: boolean;
+  game: string | null;
+  viewers: number | null;
+}
+
 export interface PlaybackDiagnostics {
   hlsLevel: string | null;
   videoTime: number;
@@ -72,7 +81,8 @@ export interface PlaybackDiagnostics {
 export type HostToPlayerMessage =
   | { type: 'status'; status: PlayerStatus; recent: RecentChannel[] }
   | { type: 'preferences'; preferences: PlayerPreferences }
-  | { type: 'fetchResult'; requestId: number; result: HostFetchResult };
+  | { type: 'fetchResult'; requestId: number; result: HostFetchResult }
+  | { type: 'channelSuggestions'; requestId: number; suggestions: ChannelSuggestion[] };
 
 export type PlayerToHostMessage =
   | { type: 'ready' }
@@ -81,6 +91,7 @@ export type PlayerToHostMessage =
   | { type: 'retry' }
   | { type: 'removeRecent'; login: string }
   | { type: 'fetch'; requestId: number; url: string; responseType: 'text' | 'arraybuffer' }
+  | { type: 'searchChannels'; requestId: number; query: string }
   | { type: 'playbackFailed'; reason: string }
   | { type: 'savePreferences'; preferences: Partial<PlayerPreferences> }
   | { type: 'showChat' }

@@ -9,6 +9,7 @@ import { fetchStreamResource } from '../net/streamFetch';
 import type { ChannelSession } from '../session/channelSession';
 import type { PlayerPreferenceStore } from '../session/playerPreferences';
 import type { RecentChannels } from '../session/recentChannels';
+import { searchChannels } from '../twitch/channelSearch';
 import { localResourceRoots, renderWebviewPage } from './webviewPage';
 
 export interface PlayerViewHooks {
@@ -96,6 +97,16 @@ export class PlayerViewProvider implements vscode.WebviewViewProvider, vscode.Di
         void fetchStreamResource(message.url, message.responseType).then((result) =>
           this.post({ type: 'fetchResult', requestId: message.requestId, result }),
         );
+        break;
+      case 'searchChannels':
+        void searchChannels(message.query)
+          .catch((error: unknown) => {
+            this.log.warn(`Channel search failed: ${String(error)}`);
+            return [];
+          })
+          .then((suggestions) =>
+            this.post({ type: 'channelSuggestions', requestId: message.requestId, suggestions }),
+          );
         break;
       case 'playbackFailed':
         void this.session.handlePlaybackFailure(message.reason);

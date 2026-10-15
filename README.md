@@ -10,8 +10,7 @@
 
 **Lurk** puts a Twitch livestream into a small panel in VS Code's Explorer – right below Outline and
 Timeline – with the chat in a second panel. When the streamer raids someone, Lurk follows along to
-the next channel. Also known by its German nickname _Arbeitszeitbetrug_ (roughly “working-hours
-fraud”).
+the next channel.
 
 <p align="center">
   <img src="media/brand/preview.png" alt="Lurk in the VS Code sidebar: a live stream with controls above the chat" width="900">
@@ -23,6 +22,8 @@ fraud”).
 
 - **Livestream in the sidebar** – type a channel name or paste a twitch.tv link and the stream
   starts. The quality fits itself to the panel size; you can also pick one.
+- **Channel suggestions** – while you type, matching channels show up like in twitch.tv's search,
+  with live status, game and viewer count.
 - **Follows raids** – when the channel raids someone, player and chat switch to the raided channel
   and show who raided whom. Prefer to decide yourself? Turn off `twitchPlayer.followRaids` and you
   get a notification with a _Watch_ button instead.

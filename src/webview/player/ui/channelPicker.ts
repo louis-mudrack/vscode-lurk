@@ -3,9 +3,11 @@ import { parseChannelInput } from '../../../shared/channelInput';
 import type { RecentChannel } from '../../../shared/protocol';
 import { el, icon } from '../../common/dom';
 import { ICONS } from '../../common/icons';
+import { SuggestionDropdown, type ChannelSearch } from './suggestionDropdown';
 
 export interface ChannelPickerOptions {
   recent: RecentChannel[];
+  search: ChannelSearch;
   onOpen(login: string): void;
   onRemove(login: string): void;
 }
@@ -50,8 +52,11 @@ export function createChannelPicker(options: ChannelPickerOptions): HTMLElement 
     },
   });
   const error = el('div', { className: 'picker-error', attributes: { role: 'alert' } });
+  const suggestions = new SuggestionDropdown(input, options.search, (login) =>
+    options.onOpen(login),
+  );
   const form = el('form', { className: 'channel-form' }, [
-    input,
+    el('div', { className: 'channel-field' }, [input, suggestions.element]),
     el('button', {
       className: 'primary-button',
       text: l10n.t('Watch'),
@@ -62,6 +67,7 @@ export function createChannelPicker(options: ChannelPickerOptions): HTMLElement 
     event.preventDefault();
     const login = parseChannelInput(input.value);
     if (login) {
+      suggestions.close();
       options.onOpen(login);
     } else {
       error.textContent = l10n.t(

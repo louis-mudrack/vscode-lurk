@@ -18,6 +18,7 @@ First public release.
 - Automatic raid following, with a notification instead when `twitchPlayer.followRaids` is off.
 - Read-only chat panel with Twitch and 7TV emotes, badges and moderation events.
 - Offline channels start playing automatically when they go live.
+- Channel suggestions while typing a channel name, in the panel and in the Command Palette.
 - English and German user interface.
 
 [Unreleased]: https://github.com/louis-mudrack/twitch-video-player-vsc-extension/compare/v0.1.0...HEAD

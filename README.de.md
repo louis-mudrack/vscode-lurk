@@ -18,6 +18,8 @@ Wenn der Streamer jemanden raidet, wechselt Lurk automatisch zum nächsten Kanal
 
 - **Livestream in der Seitenleiste** – Kanalnamen eingeben oder twitch.tv-Link einfügen, und der
   Stream startet. Die Qualität passt sich der Panelgröße an; du kannst sie auch selbst wählen.
+- **Kanalvorschläge** – schon beim Tippen erscheinen passende Kanäle wie in der Suche auf twitch.tv,
+  mit Live-Status, Spiel und Zuschauerzahl.
 - **Folgt Raids** – raidet der Kanal jemanden, wechseln Player und Chat zum geraideten Kanal und
   zeigen an, wer wen geraidet hat. Lieber selbst entscheiden? Mit `twitchPlayer.followRaids: false`
   kommt stattdessen eine Benachrichtigung mit _Schauen_-Button.
