@@ -9,13 +9,13 @@
   "author": {
     "name": "Louis Mudrack"
   },
-  "homepage": "https://github.com/louis-mudrack/twitch-video-player-vsc-extension#readme",
+  "homepage": "https://github.com/louis-mudrack/vscode-lurk#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/louis-mudrack/twitch-video-player-vsc-extension"
+    "url": "https://github.com/louis-mudrack/vscode-lurk"
   },
   "bugs": {
-    "url": "https://github.com/louis-mudrack/twitch-video-player-vsc-extension/issues"
+    "url": "https://github.com/louis-mudrack/vscode-lurk/issues"
   },
   "engines": {
     "vscode": "^1.95.0"

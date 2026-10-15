@@ -26,5 +26,5 @@ First public release.
 - Channel suggestions while typing a channel name, in the panel and in the Command Palette.
 - English and German user interface.
 
-[Unreleased]: https://github.com/louis-mudrack/twitch-video-player-vsc-extension/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/louis-mudrack/twitch-video-player-vsc-extension/releases/tag/v0.1.0
+[Unreleased]: https://github.com/louis-mudrack/vscode-lurk/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/louis-mudrack/vscode-lurk/releases/tag/v0.1.0

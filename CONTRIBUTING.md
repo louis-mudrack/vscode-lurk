@@ -5,7 +5,7 @@ follow the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Reporting bugs
 
-Open an [issue](https://github.com/louis-mudrack/twitch-video-player-vsc-extension/issues/new/choose)
+Open an [issue](https://github.com/louis-mudrack/vscode-lurk/issues/new/choose)
 with your VS Code version, operating system and the channel you watched. The **Lurk** output channel
 (_View → Output_, then pick “Lurk” from the list) usually shows what went wrong – please include
 its content.

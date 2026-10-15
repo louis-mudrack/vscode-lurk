@@ -3,9 +3,9 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/louis-mudrack/twitch-video-player-vsc-extension/actions/workflows/ci.yml"><img src="https://github.com/louis-mudrack/twitch-video-player-vsc-extension/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="https://github.com/louis-mudrack/twitch-video-player-vsc-extension/blob/HEAD/LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0--or--later-blue.svg" alt="License: GPL-3.0-or-later"></a>
-  <a href="https://github.com/louis-mudrack/twitch-video-player-vsc-extension/blob/HEAD/README.de.md"><img src="https://img.shields.io/badge/Deutsch-README-black.svg" alt="Deutsche Anleitung"></a>
+  <a href="https://github.com/louis-mudrack/vscode-lurk/actions/workflows/ci.yml"><img src="https://github.com/louis-mudrack/vscode-lurk/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/louis-mudrack/vscode-lurk/blob/HEAD/LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0--or--later-blue.svg" alt="License: GPL-3.0-or-later"></a>
+  <a href="https://github.com/louis-mudrack/vscode-lurk/blob/HEAD/README.de.md"><img src="https://img.shields.io/badge/Deutsch-README-black.svg" alt="Deutsche Anleitung"></a>
 </p>
 
 **Lurk** puts a Twitch livestream into a small panel in VS Code's Explorer – right below Outline and
@@ -49,7 +49,7 @@ you follow is live and can chat.
 - **Visual Studio Marketplace:** search for “Lurk” in the Extensions view once it is published
   there.
 - **From a release:** download the `.vsix` from the
-  [releases page](https://github.com/louis-mudrack/twitch-video-player-vsc-extension/releases) and
+  [releases page](https://github.com/louis-mudrack/vscode-lurk/releases) and
   run **Extensions: Install from VSIX…** in VS Code.
 
 Requires VS Code 1.95 or newer.

@@ -2,7 +2,7 @@
   <img src="media/brand/banner.png" alt="Lurk – Twitch-Streams in der VS-Code-Seitenleiste" width="800">
 </p>
 
-<p align="center"><a href="https://github.com/louis-mudrack/twitch-video-player-vsc-extension/blob/HEAD/README.md">English</a> · <b>Deutsch</b></p>
+<p align="center"><a href="https://github.com/louis-mudrack/vscode-lurk/blob/HEAD/README.md">English</a> · <b>Deutsch</b></p>
 
 **Lurk** (a. k. a. _Arbeitszeitbetrug_) zeigt einen Twitch-Livestream in einem kleinen Panel im
 Explorer von VS Code – direkt unter Gliederung und Zeitachse – und den Chat in einem zweiten Panel.
@@ -48,7 +48,7 @@ live sind, und kannst mitchatten.
 - **Visual Studio Marketplace:** in der Erweiterungsansicht nach „Lurk“ suchen, sobald die
   Erweiterung dort veröffentlicht ist.
 - **Aus einem Release:** die `.vsix` von der
-  [Release-Seite](https://github.com/louis-mudrack/twitch-video-player-vsc-extension/releases)
+  [Release-Seite](https://github.com/louis-mudrack/vscode-lurk/releases)
   herunterladen und in VS Code **Erweiterungen: Aus VSIX installieren…** ausführen.
 
 Benötigt VS Code 1.95 oder neuer.
