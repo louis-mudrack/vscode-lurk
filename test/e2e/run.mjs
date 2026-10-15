@@ -1,4 +1,4 @@
-// Opt-in end-to-end check against a real live stream: `npm run test:e2e [-- <channel>]`.
+// Opt-in end-to-end check against a real stream: `npm run test:e2e [-- <channel or video link>]`.
 // Downloads VS Code unless VSCODE_EXECUTABLE points at an installed build.
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';

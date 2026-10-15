@@ -14,6 +14,12 @@ const EMSCRIPTEN_GLUE = /@wasm-audio-decoders[\\/]aac[\\/]src[\\/]EmscriptenWasm
 const DECODER_COMMON = /@wasm-audio-decoders[\\/]common[\\/]src[\\/]WASMAudioDecoderCommon\.js$/;
 const PACKED_PAYLOAD = /String\.raw`dynEncode[^`]*`/g;
 const PACKED_PAYLOAD_MARKER = /dynEncode[0-9a-f]{6}/;
+/**
+ * Must stay truthy: the library guards `Object.defineProperty(EmscriptenWASM, "wasm", …)`
+ * with `if (!EmscriptenWASM.wasm)`, and an empty string makes the second decoder
+ * instance redefine the property and throw.
+ */
+const PAYLOAD_PLACEHOLDER = '"dist/aac-decoder.wasm"';
 // eslint-disable-next-line no-control-regex -- finding raw control bytes is the point
 const RAW_CONTROL_CHARACTER = /[\x00-\x08\x0b\x0c\x0e-\x1f]/g;
 const MODULE_LOOKUP = 'WASMAudioDecoderCommon.getModule(EmscriptenWASM)';
@@ -34,7 +40,7 @@ export async function writeAacDecoderWasm() {
 }
 
 function stripPayloads(source, file) {
-  const stripped = source.replace(PACKED_PAYLOAD, '""');
+  const stripped = source.replace(PACKED_PAYLOAD, PAYLOAD_PLACEHOLDER);
   if (stripped === source) {
     throw new Error(`No packed WebAssembly found in ${file}; did the decoder library change?`);
   }
