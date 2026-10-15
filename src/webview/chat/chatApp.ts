@@ -1,3 +1,4 @@
+import * as l10n from '@vscode/l10n';
 import type {
   ChatBadge,
   ChatChannel,
@@ -16,12 +17,16 @@ import { readableNameColor } from './nameColor';
 const DEFAULT_MAX_MESSAGES = 200;
 const ACTION_PREFIX = '\u0001ACTION ';
 const ACTION_SUFFIX = '\u0001';
-const CONNECTION_LABELS: Record<ConnectionState, string> = {
-  idle: '',
-  connecting: 'Connecting to chat…',
-  connected: '',
-  reconnecting: 'Reconnecting to chat…',
-};
+function connectionLabel(state: ConnectionState): string {
+  switch (state) {
+    case 'connecting':
+      return l10n.t('Connecting to chat…');
+    case 'reconnecting':
+      return l10n.t('Reconnecting to chat…');
+    default:
+      return '';
+  }
+}
 
 function isDarkTheme(): boolean {
   const classes = document.body.classList;
@@ -36,7 +41,7 @@ export class ChatApp {
   private readonly connectionBanner = el('div', { className: 'connection-banner' });
   private readonly emptyState = el('div', {
     className: 'empty-state',
-    text: 'Open a channel in the Twitch panel to see its chat here.',
+    text: l10n.t('Open a channel in the Twitch panel to see its chat here.'),
   });
   private readonly footer = el('div', { className: 'chat-footer' });
   private channel: ChatChannel | null = null;
@@ -88,18 +93,18 @@ export class ChatApp {
       channel.badges.map((badge) => [`${badge.setId}/${badge.version}`, badge]),
     );
     this.footer.replaceChildren(
-      el('span', { text: 'Read-only chat' }),
+      el('span', { text: l10n.t('Read-only chat') }),
       el('a', {
-        text: 'Chat on twitch.tv',
+        text: l10n.t('Chat on twitch.tv'),
         attributes: { href: `https://www.twitch.tv/popout/${channel.login}/chat` },
       }),
     );
-    this.list.add(renderSystemLine(`Welcome to ${channel.displayName}'s chat`));
+    this.list.add(renderSystemLine(l10n.t('Welcome to the chat of {0}', channel.displayName)));
     this.irc.join(channel.login);
   }
 
   private showConnectionState(state: ConnectionState): void {
-    const label = CONNECTION_LABELS[state];
+    const label = connectionLabel(state);
     this.connectionBanner.textContent = label;
     this.connectionBanner.hidden = !label;
   }
@@ -129,7 +134,7 @@ export class ChatApp {
           this.list.removeWhere((line) => line.dataset['login'] === target);
         } else {
           this.list.clear();
-          this.list.add(renderSystemLine('Chat was cleared by a moderator.'));
+          this.list.add(renderSystemLine(l10n.t('Chat was cleared by a moderator.')));
         }
         break;
       }

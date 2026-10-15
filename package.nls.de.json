@@ -1,0 +1,20 @@
+{
+  "displayName": "Lurk – Twitch-Streams in der Seitenleiste",
+  "description": "Twitch-Livestreams in einem kleinen VS-Code-Panel schauen, mit Chat, 7TV-Emotes und automatischem Folgen bei Raids. Auch bekannt als Arbeitszeitbetrug.",
+  "view.player": "Twitch",
+  "view.chat": "Twitch-Chat",
+  "command.openChannel": "Twitch-Kanal öffnen…",
+  "command.stop": "Stream beenden",
+  "command.openInBrowser": "Stream im Browser öffnen",
+  "command.showChat": "Chat anzeigen",
+  "config.followRaids": "Wenn der Kanal, den du schaust, jemanden raidet, automatisch zum geraideten Kanal wechseln.",
+  "config.quality": "Bevorzugte Stream-Qualität. Das Qualitätsmenü im Player überschreibt diese Einstellung bis zum Neustart von VS Code.",
+  "config.quality.auto": "Beste Qualität für Panelgröße und Bandbreite wählen.",
+  "config.quality.1080p": "Bis 1080p (Quelle).",
+  "config.quality.720p": "Bis 720p.",
+  "config.quality.480p": "Bis 480p.",
+  "config.quality.360p": "Bis 360p.",
+  "config.quality.160p": "Niedrigste Qualität, geringste Bandbreite.",
+  "config.resumeLastChannel": "Den zuletzt geschauten Kanal wieder öffnen, wenn das Player-Panel nach dem Start von VS Code angezeigt wird.",
+  "config.chat.maxMessages": "Wie viele Chatnachrichten im Chat-Panel behalten werden."
+}

@@ -31,9 +31,9 @@ async function offerRaidFollow(
   from: ChannelInfo,
   target: RaidTarget,
 ): Promise<void> {
-  const watch = `Watch ${target.displayName}`;
+  const watch = vscode.l10n.t('Watch {0}', target.displayName);
   const choice = await vscode.window.showInformationMessage(
-    `${from.displayName} is raiding ${target.displayName}.`,
+    vscode.l10n.t('{0} is raiding {1}.', from.displayName, target.displayName),
     watch,
   );
   if (choice === watch) {
@@ -42,7 +42,7 @@ async function offerRaidFollow(
 }
 
 export function activate(context: vscode.ExtensionContext): void {
-  const output = vscode.window.createOutputChannel('Twitch Player', { log: true });
+  const output = vscode.window.createOutputChannel('Lurk', { log: true });
   const log = createLogger(output);
   const recent = new RecentChannels(context.globalState);
   const preferences = new PlayerPreferenceStore(context.globalState);
@@ -66,7 +66,9 @@ export function activate(context: vscode.ExtensionContext): void {
   const openChannel = (input: string): void => {
     const login = parseChannelInput(input);
     if (!login) {
-      void vscode.window.showWarningMessage(`"${input}" is not a valid Twitch channel name.`);
+      void vscode.window.showWarningMessage(
+        vscode.l10n.t('"{0}" is not a valid Twitch channel name.', input),
+      );
       return;
     }
     void revealPlayer();
@@ -112,12 +114,14 @@ export function activate(context: vscode.ExtensionContext): void {
       return;
     }
     const input = await vscode.window.showInputBox({
-      title: 'Watch a Twitch channel',
-      prompt: 'Channel name or twitch.tv link',
-      placeHolder: 'e.g. papaplatte',
+      title: vscode.l10n.t('Watch a Twitch channel'),
+      prompt: vscode.l10n.t('Channel name or twitch.tv link'),
+      placeHolder: vscode.l10n.t('e.g. {0}', 'papaplatte'),
       value: recent.last()?.login ?? '',
       validateInput: (value) =>
-        !value.trim() || parseChannelInput(value) ? undefined : 'Not a valid Twitch channel name',
+        !value.trim() || parseChannelInput(value)
+          ? undefined
+          : vscode.l10n.t('Not a valid Twitch channel name'),
     });
     if (input) {
       openChannel(input);

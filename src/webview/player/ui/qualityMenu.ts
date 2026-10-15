@@ -1,3 +1,4 @@
+import * as l10n from '@vscode/l10n';
 import { el, icon } from '../../common/dom';
 import { ICONS } from '../../common/icons';
 import { AUTO_LEVEL } from '../qualityLevels';
@@ -42,7 +43,9 @@ export class QualityMenu {
   }
 
   private render(): void {
-    const autoLabel = this.state.playingLabel ? `Auto (${this.state.playingLabel})` : 'Auto';
+    const autoLabel = this.state.playingLabel
+      ? l10n.t('Auto ({0})', this.state.playingLabel)
+      : l10n.t('Auto');
     const entries = [
       { index: AUTO_LEVEL, label: autoLabel },
       ...this.state.options.map(({ index, label }) => ({ index, label })),

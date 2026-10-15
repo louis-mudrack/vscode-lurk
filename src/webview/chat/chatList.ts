@@ -1,3 +1,4 @@
+import * as l10n from '@vscode/l10n';
 import { el } from '../common/dom';
 
 const FLUSH_INTERVAL_MS = 100;
@@ -17,7 +18,7 @@ export class ChatList {
   });
   private readonly resumeButton = el('button', {
     className: 'resume-button',
-    text: 'More messages below',
+    text: l10n.t('More messages below'),
     attributes: { type: 'button' },
   });
   private pending: HTMLElement[] = [];

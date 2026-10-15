@@ -70,7 +70,7 @@ export class ChannelSession {
       }
       if (!lookup) {
         this.stopWatchingRaids();
-        this.setStatus({ kind: 'error', login, message: `There is no Twitch channel "${login}".` });
+        this.setStatus({ kind: 'error', login, reason: 'notFound' });
         return;
       }
       await this.hooks.rememberChannel(lookup.channel);
@@ -79,11 +79,7 @@ export class ChannelSession {
     } catch (error) {
       if (navigation === this.navigation) {
         this.log.error(`Opening ${login} failed: ${String(error)}`);
-        this.setStatus({
-          kind: 'error',
-          login,
-          message: 'Could not reach Twitch. Check your connection and try again.',
-        });
+        this.setStatus({ kind: 'error', login, reason: 'unreachable' });
       }
     }
   }
@@ -121,11 +117,7 @@ export class ChannelSession {
         return;
       }
       if (!this.allowRestart()) {
-        this.setStatus({
-          kind: 'error',
-          login: status.channel.login,
-          message: 'The stream keeps failing to play. Try again in a moment.',
-        });
+        this.setStatus({ kind: 'error', login: status.channel.login, reason: 'playbackFailing' });
         return;
       }
       await this.applyLookup(lookup, navigation, status.raidedFrom);

@@ -23,6 +23,9 @@ export interface PlaybackSource {
   url: string;
 }
 
+/** The webview turns these into localized messages. */
+export type PlayerErrorReason = 'notFound' | 'unreachable' | 'playbackFailing';
+
 export type PlayerStatus =
   | { kind: 'idle' }
   | { kind: 'loading'; login: string }
@@ -34,7 +37,7 @@ export type PlayerStatus =
       raidedFrom?: string;
     }
   | { kind: 'offline'; channel: ChannelInfo; raidedFrom?: string }
-  | { kind: 'error'; login: string; message: string };
+  | { kind: 'error'; login: string; reason: PlayerErrorReason };
 
 export const QUALITY_OPTIONS = ['auto', '1080p', '720p', '480p', '360p', '160p'] as const;
 export type QualityPreference = (typeof QUALITY_OPTIONS)[number];

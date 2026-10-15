@@ -1,8 +1,11 @@
 **
-!dist/**
-dist/**/*.map
-!media/**
+!dist/*.js
+!media/*.css
+!media/*.svg
+!media/icon.png
+!l10n/*.json
 !package.json
+!package.nls*.json
 !README.md
 !CHANGELOG.md
 !LICENSE

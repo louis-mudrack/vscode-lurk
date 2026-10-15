@@ -1,5 +1,7 @@
+import * as l10n from '@vscode/l10n';
 import type {
   HostToPlayerMessage,
+  PlayerErrorReason,
   PlayerPreferences,
   PlayerStatus,
   QualityPreference,
@@ -17,6 +19,17 @@ import { createStatusScreen, textButton } from './ui/statusScreen';
 
 const AUDIO_BLOCK_CHECK_MS = 1_000;
 const DIAGNOSTICS_INTERVAL_MS = 5_000;
+
+function errorMessage(reason: PlayerErrorReason, login: string): string {
+  switch (reason) {
+    case 'notFound':
+      return l10n.t('There is no Twitch channel "{0}".', login);
+    case 'unreachable':
+      return l10n.t('Could not reach Twitch. Check your connection and try again.');
+    case 'playbackFailing':
+      return l10n.t('The stream keeps failing to play. Try again in a moment.');
+  }
+}
 
 /** Renders whatever the extension host says is being watched. */
 export class PlayerApp {
@@ -124,24 +137,24 @@ export class PlayerApp {
       case 'idle':
         return createStatusScreen({
           iconPath: ICONS.screen,
-          title: 'Watch a Twitch stream',
-          detail: 'When the channel raids someone, the player follows along.',
+          title: l10n.t('Watch a Twitch stream'),
+          detail: l10n.t('When the channel raids someone, the player follows along.'),
           footer: this.channelPicker(),
         });
       case 'loading':
-        return createStatusScreen({ busy: true, title: `Opening ${status.login}…` });
+        return createStatusScreen({ busy: true, title: l10n.t('Opening {0}…', status.login) });
       case 'offline':
         return createStatusScreen({
           avatarUrl: status.channel.profileImageUrl,
-          title: `${status.channel.displayName} is offline`,
-          detail: 'The stream starts here automatically when they go live.',
+          title: l10n.t('{0} is offline', status.channel.displayName),
+          detail: l10n.t('The stream starts here automatically when they go live.'),
           footer: this.channelPicker(),
         });
       case 'error':
         return createStatusScreen({
           iconPath: ICONS.retry,
-          title: status.message,
-          actions: [textButton('Try again', () => this.host.post({ type: 'retry' }), true)],
+          title: errorMessage(status.reason, status.login),
+          actions: [textButton(l10n.t('Try again'), () => this.host.post({ type: 'retry' }), true)],
           footer: this.channelPicker(),
         });
     }

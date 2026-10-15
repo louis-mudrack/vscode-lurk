@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      html,
+      body {
+        margin: 0;
+        width: 1280px;
+        height: 760px;
+        overflow: hidden;
+        background: #1f1f1f;
+      }
+      body {
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        color: #cccccc;
+        display: grid;
+        grid-template-rows: 35px 1fr 22px;
+        grid-template-columns: 48px 330px 1fr;
+      }
+      .titlebar {
+        grid-column: 1 / -1;
+        background: #181818;
+        border-bottom: 1px solid #2b2b2b;
+        display: flex;
+        align-items: center;
+        padding: 0 12px;
+        gap: 14px;
+        color: #9d9d9d;
+      }
+      .titlebar .search {
+        margin: 0 auto;
+        width: 420px;
+        height: 22px;
+        border: 1px solid #3c3c3c;
+        border-radius: 6px;
+        background: #222;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #9d9d9d;
+        font-size: 12px;
+      }
+      .dots {
+        display: flex;
+        gap: 8px;
+      }
+      .dots i {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        display: block;
+      }
+      .activity {
+        background: #181818;
+        border-right: 1px solid #2b2b2b;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding-top: 6px;
+        gap: 6px;
+      }
+      .activity svg {
+        margin: 10px 0;
+      }
+      .activity span {
+        width: 24px;
+        height: 24px;
+        margin: 6px 0;
+        border: 2px solid #868686;
+        border-radius: 5px;
+        box-sizing: border-box;
+      }
+      .activity span.active {
+        border-color: #fff;
+      }
+      .sidebar {
+        background: #181818;
+        border-right: 1px solid #2b2b2b;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .sidebar-title {
+        height: 35px;
+        display: flex;
+        align-items: center;
+        padding: 0 20px;
+        font-size: 11px;
+        letter-spacing: 0.04em;
+        color: #cccccc;
+      }
+      .section {
+        height: 22px;
+        display: flex;
+        align-items: center;
+        padding: 0 8px;
+        gap: 4px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        border-top: 1px solid #2b2b2b;
+        color: #cccccc;
+        flex: none;
+      }
+      .section .desc {
+        font-weight: 400;
+        text-transform: none;
+        color: #9d9d9d;
+        margin-left: 6px;
+        letter-spacing: 0;
+      }
+      .section .actions {
+        margin-left: auto;
+        display: flex;
+        gap: 6px;
+      }
+      .section .actions b {
+        width: 14px;
+        height: 14px;
+        border: 1.5px solid #c5c5c5;
+        border-radius: 3px;
+        box-sizing: border-box;
+        display: block;
+      }
+      .chev {
+        width: 0;
+        height: 0;
+        border: 4px solid transparent;
+        margin: 0 4px 0 2px;
+      }
+      .chev.open {
+        border-top-color: #c5c5c5;
+        border-bottom: 0;
+      }
+      .chev.closed {
+        border-left-color: #c5c5c5;
+        border-right: 0;
+      }
+      .tree {
+        padding: 2px 0 6px;
+      }
+      .tree div {
+        height: 22px;
+        display: flex;
+        align-items: center;
+        padding-left: 22px;
+        gap: 6px;
+      }
+      .tree div.indent {
+        padding-left: 38px;
+      }
+      .tree .f {
+        width: 12px;
+        height: 12px;
+        border-radius: 2px;
+        display: inline-block;
+      }
+      .tree .sel {
+        background: #37373d;
+      }
+      iframe {
+        border: 0;
+        display: block;
+        width: 100%;
+        flex: none;
+      }
+      .editor {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .tabs {
+        height: 35px;
+        background: #181818;
+        display: flex;
+        border-bottom: 1px solid #2b2b2b;
+      }
+      .tab {
+        padding: 0 16px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        border-right: 1px solid #2b2b2b;
+        color: #9d9d9d;
+      }
+      .tab.active {
+        background: #1f1f1f;
+        color: #fff;
+        border-top: 1px solid #0078d4;
+      }
+      pre {
+        margin: 0;
+        padding: 12px 0;
+        font:
+          14px/21px 'DejaVu Sans Mono',
+          monospace;
+        color: #cccccc;
+      }
+      .ln {
+        display: inline-block;
+        width: 52px;
+        text-align: right;
+        padding-right: 22px;
+        color: #6e7681;
+      }
+      .k {
+        color: #569cd6;
+      }
+      .s {
+        color: #ce9178;
+      }
+      .t {
+        color: #4ec9b0;
+      }
+      .f2 {
+        color: #dcdcaa;
+      }
+      .c {
+        color: #6a9955;
+      }
+      .v {
+        color: #9cdcfe;
+      }
+      .n {
+        color: #b5cea8;
+      }
+      .status {
+        grid-column: 1 / -1;
+        background: #181818;
+        border-top: 1px solid #2b2b2b;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        font-size: 12px;
+        color: #9d9d9d;
+      }
+      .status .remote {
+        background: #0078d4;
+        color: #fff;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        padding: 0 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="titlebar">
+      <div class="dots">
+        <i style="background: #ff5f57"></i><i style="background: #febc2e"></i
+        ><i style="background: #28c840"></i>
+      </div>
+      <div class="search">lurk-demo</div>
+    </div>
+    <div class="activity">
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="#ffffff">
+        <path
+          d="M15 1H4c-1.1 0-2 .9-2 2v14h2V3h11V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h10v14z"
+        /></svg
+      ><svg viewBox="0 0 24 24" width="24" height="24" fill="#868686">
+        <path
+          d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"
+        /></svg
+      ><svg viewBox="0 0 24 24" width="24" height="24" fill="#868686">
+        <path
+          d="M6 3a3 3 0 0 0-1 5.83v6.34A3 3 0 1 0 7 15.17V13c0-1.1.9-2 2-2h6a4 4 0 0 0 4-4V8.83A3 3 0 1 0 17 8.83V7a2 2 0 0 1-2 2H9c-.73 0-1.41.2-2 .54V8.83A3 3 0 0 0 6 3z"
+        /></svg
+      ><svg viewBox="0 0 24 24" width="24" height="24" fill="#868686">
+        <path d="M8 5v14l11-7z" /></svg
+      ><svg
+        viewBox="0 0 24 24"
+        width="24"
+        height="24"
+        fill="none"
+        stroke="#868686"
+        stroke-width="2"
+      >
+        <path d="M4 4h7v7H4V4zm9 0h7v7h-7V4zM4 13h7v7H4v-7zm9 3.5h7M16.5 13v7" />
+      </svg>
+    </div>
+    <div class="sidebar">
+      <div class="sidebar-title">EXPLORER</div>
+      <div class="section"><i class="chev open"></i>lurk-demo</div>
+      <div class="tree">
+        <div><i class="chev open"></i>src</div>
+        <div class="indent"><span class="f" style="background: #3178c6"></span>extension.ts</div>
+        <div class="indent sel"><span class="f" style="background: #3178c6"></span>player.ts</div>
+        <div><span class="f" style="background: #cbcb41"></span>package.json</div>
+      </div>
+      <div class="section"><i class="chev closed"></i>Outline</div>
+      <div class="section"><i class="chev closed"></i>Timeline</div>
+      <div class="section">
+        <i class="chev open"></i>Twitch<span class="desc">CozyCoder</span
+        ><span class="actions"
+          ><svg viewBox="0 0 24 24" width="14" height="14" fill="#c5c5c5">
+            <path
+              d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"
+            /></svg
+          ><svg viewBox="0 0 24 24" width="14" height="14" fill="#c5c5c5">
+            <path
+              d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.17L4 17.17V4h16v12z"
+            /></svg
+          ><svg viewBox="0 0 24 24" width="14" height="14" fill="#c5c5c5">
+            <path
+              d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"
+            /></svg
+          ><svg viewBox="0 0 24 24" width="14" height="14" fill="#c5c5c5">
+            <path d="M6 6h12v12H6V6zm2 2v8h8V8H8z" /></svg
+        ></span>
+      </div>
+      <iframe src="preview-player.html" style="height: 236px"></iframe>
+      <div class="section">
+        <i class="chev open"></i>Twitch Chat<span class="desc">CozyCoder</span>
+      </div>
+      <iframe src="preview-chat.html" style="flex: 1; min-height: 0"></iframe>
+    </div>
+    <div class="editor">
+      <div class="tabs">
+        <div class="tab active">player.ts</div>
+        <div class="tab">extension.ts</div>
+      </div>
+      <pre><span class="ln">1</span><span class="k">import</span> { <span class="v">StreamPlayer</span> } <span class="k">from</span> <span class="s">'./streamPlayer'</span>;
+<span class="ln">2</span>
+<span class="ln">3</span><span class="c">// Totally working on the sprint ticket right now.</span>
+<span class="ln">4</span><span class="k">export async function</span> <span class="f2">shipFeature</span>(<span class="v">ticket</span>: <span class="t">Ticket</span>): <span class="t">Promise</span>&lt;<span class="k">void</span>&gt; {
+<span class="ln">5</span>  <span class="k">const</span> <span class="v">plan</span> = <span class="k">await</span> <span class="f2">estimate</span>(<span class="v">ticket</span>);
+<span class="ln">6</span>  <span class="k">if</span> (<span class="v">plan</span>.<span class="v">storyPoints</span> &gt; <span class="n">3</span>) {
+<span class="ln">7</span>    <span class="k">return</span> <span class="f2">splitIntoSubtasks</span>(<span class="v">ticket</span>);
+<span class="ln">8</span>  }
+<span class="ln">9</span>  <span class="k">await</span> <span class="f2">implement</span>(<span class="v">plan</span>);
+<span class="ln">10</span>  <span class="k">await</span> <span class="f2">writeTests</span>(<span class="v">plan</span>);
+<span class="ln">11</span>  <span class="k">await</span> <span class="f2">openPullRequest</span>(<span class="v">ticket</span>, { <span class="v">draft</span>: <span class="k">false</span> });
+<span class="ln">12</span>}
+</pre>
+    </div>
+    <div class="status">
+      <span class="remote">⇄</span><span>main</span><span>0 ⚠ 0</span
+      ><span style="margin-left: auto; margin-right: 12px">TypeScript</span>
+    </div>
+  </body>
+</html>

@@ -49,7 +49,7 @@ export class PlayerViewProvider implements vscode.WebviewViewProvider, vscode.Di
     view.webview.html = renderWebviewPage({
       webview: view.webview,
       extensionUri: this.extensionUri,
-      title: 'Twitch Player',
+      title: 'Lurk',
       scriptPath: 'dist/player.js',
       stylesheetPath: 'media/player.css',
       connectSources: ['https:'],

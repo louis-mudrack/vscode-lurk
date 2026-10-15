@@ -46,7 +46,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     view.webview.html = renderWebviewPage({
       webview: view.webview,
       extensionUri: this.extensionUri,
-      title: 'Twitch Chat',
+      title: 'Lurk Chat',
       scriptPath: 'dist/chat.js',
       stylesheetPath: 'media/chat.css',
       connectSources: ['wss://irc-ws.chat.twitch.tv'],
@@ -125,7 +125,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     for (const result of [global, own]) {
       if (result.status === 'rejected') {
         this.log.warn(`Loading 7TV emotes failed: ${String(result.reason)}`);
-        this.post({ type: 'notice', text: 'Some 7TV emotes could not be loaded.' });
+        this.post({ type: 'notice', text: vscode.l10n.t('Some 7TV emotes could not be loaded.') });
       }
     }
     return [

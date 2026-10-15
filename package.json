@@ -1,13 +1,21 @@
 {
-  "name": "twitch-video-player",
-  "displayName": "Arbeitszeitbetrug \u2013 Twitch Video Player",
-  "description": "Watch Twitch livestreams in a small sidebar panel, with 7TV chat and automatic raid following.",
+  "name": "lurk",
+  "displayName": "%displayName%",
+  "description": "%description%",
   "version": "0.1.0",
   "publisher": "louis-mudrack",
-  "license": "MIT",
+  "private": true,
+  "license": "GPL-3.0-or-later",
+  "author": {
+    "name": "Louis Mudrack"
+  },
+  "homepage": "https://github.com/louis-mudrack/twitch-video-player-vsc-extension#readme",
   "repository": {
     "type": "git",
     "url": "https://github.com/louis-mudrack/twitch-video-player-vsc-extension"
+  },
+  "bugs": {
+    "url": "https://github.com/louis-mudrack/twitch-video-player-vsc-extension/issues"
   },
   "engines": {
     "vscode": "^1.95.0"
@@ -20,10 +28,20 @@
     "stream",
     "livestream",
     "player",
+    "video",
+    "chat",
     "7tv",
-    "chat"
+    "raid",
+    "lurk",
+    "arbeitszeitbetrug"
   ],
   "icon": "media/icon.png",
+  "galleryBanner": {
+    "color": "#1b1030",
+    "theme": "dark"
+  },
+  "pricing": "Free",
+  "l10n": "./l10n",
   "extensionKind": [
     "ui",
     "workspace"
@@ -36,16 +54,16 @@
         {
           "type": "webview",
           "id": "twitchPlayer.player",
-          "name": "Twitch",
-          "icon": "media/twitch.svg",
-          "contextualTitle": "Twitch Player"
+          "name": "%view.player%",
+          "icon": "media/player.svg",
+          "contextualTitle": "Lurk"
         },
         {
           "type": "webview",
           "id": "twitchPlayer.chat",
-          "name": "Twitch Chat",
+          "name": "%view.chat%",
           "icon": "media/chat.svg",
-          "contextualTitle": "Twitch Chat",
+          "contextualTitle": "Lurk",
           "visibility": "collapsed"
         }
       ]
@@ -53,26 +71,26 @@
     "commands": [
       {
         "command": "twitchPlayer.openChannel",
-        "title": "Open Channel\u2026",
-        "category": "Twitch",
+        "title": "%command.openChannel%",
+        "category": "Lurk",
         "icon": "$(search)"
       },
       {
         "command": "twitchPlayer.stop",
-        "title": "Stop Stream",
-        "category": "Twitch",
+        "title": "%command.stop%",
+        "category": "Lurk",
         "icon": "$(debug-stop)"
       },
       {
         "command": "twitchPlayer.openInBrowser",
-        "title": "Open Stream in Browser",
-        "category": "Twitch",
+        "title": "%command.openInBrowser%",
+        "category": "Lurk",
         "icon": "$(link-external)"
       },
       {
         "command": "twitchPlayer.showChat",
-        "title": "Show Chat",
-        "category": "Twitch",
+        "title": "%command.showChat%",
+        "category": "Lurk",
         "icon": "$(comment-discussion)"
       }
     ],
@@ -115,12 +133,12 @@
       ]
     },
     "configuration": {
-      "title": "Twitch Video Player",
+      "title": "Lurk",
       "properties": {
         "twitchPlayer.followRaids": {
           "type": "boolean",
           "default": true,
-          "description": "When the channel you are watching raids someone, switch to the raided channel automatically."
+          "description": "%config.followRaids%"
         },
         "twitchPlayer.quality": {
           "type": "string",
@@ -134,26 +152,26 @@
             "160p"
           ],
           "enumDescriptions": [
-            "Pick the best quality for the panel size and bandwidth.",
-            "Up to 1080p (source).",
-            "Up to 720p.",
-            "Up to 480p.",
-            "Up to 360p.",
-            "Lowest quality, least bandwidth."
+            "%config.quality.auto%",
+            "%config.quality.1080p%",
+            "%config.quality.720p%",
+            "%config.quality.480p%",
+            "%config.quality.360p%",
+            "%config.quality.160p%"
           ],
-          "description": "Preferred stream quality. The quality menu in the player overrides this for the current session."
+          "description": "%config.quality%"
         },
         "twitchPlayer.resumeLastChannel": {
           "type": "boolean",
           "default": false,
-          "description": "Reopen the last watched channel when the player panel is shown after VS Code starts."
+          "description": "%config.resumeLastChannel%"
         },
         "twitchPlayer.chat.maxMessages": {
           "type": "number",
           "default": 200,
           "minimum": 20,
           "maximum": 1000,
-          "description": "How many chat messages to keep in the chat panel."
+          "description": "%config.chat.maxMessages%"
         }
       }
     }
@@ -169,9 +187,11 @@
     "check": "npm run typecheck && npm run lint && npm run format:check && npm test",
     "vscode:prepublish": "node scripts/build.mjs --production",
     "package": "vsce package --no-dependencies",
-    "test:e2e": "npm run build && node test/e2e/run.mjs"
+    "test:e2e": "npm run build && node test/e2e/run.mjs",
+    "l10n": "vscode-l10n-dev export --outDir ./l10n ./src"
   },
   "dependencies": {
+    "@vscode/l10n": "^0.0.18",
     "@wasm-audio-decoders/aac": "0.0.1",
     "hls.js": "1.7.3",
     "ws": "8.22.0"
@@ -181,6 +201,7 @@
     "@types/node": "^22.20.5",
     "@types/vscode": "1.95.0",
     "@types/ws": "^8.18.2",
+    "@vscode/l10n-dev": "^0.0.35",
     "@vscode/test-electron": "^3.1.0",
     "@vscode/vsce": "^4.0.0",
     "esbuild": "^0.28.2",

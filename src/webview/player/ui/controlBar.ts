@@ -1,3 +1,4 @@
+import * as l10n from '@vscode/l10n';
 import { el, icon } from '../../common/dom';
 import { ICONS } from '../../common/icons';
 import { AUTO_LEVEL } from '../qualityLevels';
@@ -44,11 +45,17 @@ export class ControlBar {
   private readonly qualityMenu: QualityMenu;
 
   constructor(private readonly actions: ControlBarActions) {
-    this.playButton = iconButton('Pause', ICONS.pause, () => actions.togglePause());
-    this.muteButton = iconButton('Mute', ICONS.volume, () => this.toggleMute());
+    this.playButton = iconButton(l10n.t('Pause'), ICONS.pause, () => actions.togglePause());
+    this.muteButton = iconButton(l10n.t('Mute'), ICONS.volume, () => this.toggleMute());
     this.volumeSlider = el('input', {
       className: 'volume-slider',
-      attributes: { type: 'range', min: '0', max: '1', step: '0.01', 'aria-label': 'Volume' },
+      attributes: {
+        type: 'range',
+        min: '0',
+        max: '1',
+        step: '0.01',
+        'aria-label': l10n.t('Volume'),
+      },
     });
     this.volumeSlider.addEventListener('input', () =>
       this.commitVolume(Number(this.volumeSlider.value), false),
@@ -56,7 +63,7 @@ export class ControlBar {
     this.qualityMenu = new QualityMenu((index) => actions.selectLevel(index));
     this.qualityButton = el(
       'button',
-      { className: 'quality-button', title: 'Quality', attributes: { type: 'button' } },
+      { className: 'quality-button', title: l10n.t('Quality'), attributes: { type: 'button' } },
       [icon(ICONS.quality), el('span', { className: 'quality-label', text: 'Auto' })],
     );
     this.qualityButton.addEventListener('click', (event) => {
@@ -64,7 +71,7 @@ export class ControlBar {
       this.qualityMenu.toggle();
     });
     const pictureInPicture = document.pictureInPictureEnabled
-      ? iconButton('Picture in picture', ICONS.pictureInPicture, () =>
+      ? iconButton(l10n.t('Picture in picture'), ICONS.pictureInPicture, () =>
           actions.togglePictureInPicture(),
         )
       : null;
@@ -72,7 +79,7 @@ export class ControlBar {
     this.element = el('div', { className: 'control-bar' }, [
       this.playButton,
       el('div', { className: 'volume-group' }, [this.muteButton, this.volumeSlider]),
-      el('span', { className: 'live-badge', text: 'LIVE' }),
+      el('span', { className: 'live-badge', text: l10n.t('LIVE') }),
       el('span', { className: 'spacer' }),
       el('div', { className: 'quality-anchor' }, [this.qualityButton, this.qualityMenu.element]),
       pictureInPicture,
@@ -80,7 +87,11 @@ export class ControlBar {
   }
 
   setPaused(paused: boolean): void {
-    setIcon(this.playButton, paused ? ICONS.play : ICONS.pause, paused ? 'Play' : 'Pause');
+    setIcon(
+      this.playButton,
+      paused ? ICONS.play : ICONS.pause,
+      paused ? l10n.t('Play') : l10n.t('Pause'),
+    );
   }
 
   showVolume(volume: number, muted: boolean): void {
@@ -90,7 +101,7 @@ export class ControlBar {
     setIcon(
       this.muteButton,
       muted || volume === 0 ? ICONS.muted : ICONS.volume,
-      muted ? 'Unmute' : 'Mute',
+      muted ? l10n.t('Unmute') : l10n.t('Mute'),
     );
   }
 
@@ -98,7 +109,9 @@ export class ControlBar {
     const selected = state.options.find((option) => option.index === state.selectedIndex);
     const label =
       state.selectedIndex === AUTO_LEVEL || !selected
-        ? `Auto${state.playingLabel ? ` · ${state.playingLabel}` : ''}`
+        ? state.playingLabel
+          ? l10n.t('Auto · {0}', state.playingLabel)
+          : l10n.t('Auto')
         : selected.label;
     this.qualityButton.querySelector('.quality-label')?.replaceChildren(label);
     this.qualityMenu.update(state);

@@ -1,6 +1,7 @@
+import * as l10n from '@vscode/l10n';
 import type { ChannelInfo, StreamInfo } from '../../../shared/protocol';
 import { el, icon } from '../../common/dom';
-import { formatUptime, formatViewerCount } from '../../common/format';
+import { formatExactCount, formatUptime, formatViewerCount } from '../../common/format';
 import { ICONS } from '../../common/icons';
 import { ControlBar, type ControlBarActions } from './controlBar';
 
@@ -20,7 +21,7 @@ export class PlayerStage {
     className: 'raid-banner',
     attributes: { role: 'status' },
   });
-  private readonly adBadge = el('div', { className: 'ad-badge', text: 'Ad break' });
+  private readonly adBadge = el('div', { className: 'ad-badge', text: l10n.t('Ad break') });
   private readonly unblockButton: HTMLButtonElement;
   private readonly avatar = el('img', { className: 'avatar', attributes: { alt: '' } });
   private readonly name = el('span', { className: 'info-name' });
@@ -35,7 +36,7 @@ export class PlayerStage {
     this.unblockButton = el(
       'button',
       { className: 'unblock-audio', attributes: { type: 'button' } },
-      [icon(ICONS.volume), el('span', { text: 'Click to enable sound' })],
+      [icon(ICONS.volume), el('span', { text: l10n.t('Click for sound') })],
     );
     this.unblockButton.addEventListener('click', () => actions.unblockAudio());
 
@@ -78,14 +79,21 @@ export class PlayerStage {
     this.viewers.textContent = formatViewerCount(stream.viewers);
     this.viewers.parentElement?.setAttribute(
       'title',
-      `${stream.viewers.toLocaleString('en')} viewers · live for ${formatUptime(stream.startedAt)}`,
+      l10n.t(
+        '{0} viewers · live for {1}',
+        formatExactCount(stream.viewers),
+        formatUptime(stream.startedAt),
+      ),
     );
     this.title.textContent = stream.title;
     this.title.title = stream.title;
   }
 
   showRaid(from: string, to: string): void {
-    this.raidBanner.replaceChildren(icon(ICONS.raid), el('span', { text: `${from} raided ${to}` }));
+    this.raidBanner.replaceChildren(
+      icon(ICONS.raid),
+      el('span', { text: l10n.t('{0} raided {1}', from, to) }),
+    );
     this.raidBanner.hidden = false;
     window.clearTimeout(this.raidTimer);
     this.raidTimer = window.setTimeout(() => {

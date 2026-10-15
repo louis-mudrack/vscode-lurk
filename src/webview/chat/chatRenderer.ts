@@ -1,3 +1,4 @@
+import * as l10n from '@vscode/l10n';
 import type { ChatBadge } from '../../shared/protocol';
 import { el } from '../common/dom';
 import type { EmoteImage, MessageToken } from './messageTokens';
@@ -69,7 +70,10 @@ export function renderChatLine(line: ChatLine): HTMLElement {
   }
   const row = el('div', { className: `chat-line${line.isAction ? ' action' : ''}` }, [
     line.replyTo
-      ? el('div', { className: 'reply-hint', text: `↪ Replying to @${line.replyTo}` })
+      ? el('div', {
+          className: 'reply-hint',
+          text: `↪ ${l10n.t('Replying to @{0}', line.replyTo)}`,
+        })
       : null,
     ...badges,
     name,

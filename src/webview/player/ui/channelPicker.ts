@@ -1,3 +1,4 @@
+import * as l10n from '@vscode/l10n';
 import { parseChannelInput } from '../../../shared/channelInput';
 import type { RecentChannel } from '../../../shared/protocol';
 import { el, icon } from '../../common/dom';
@@ -14,17 +15,21 @@ function avatar(url: string): HTMLImageElement {
 }
 
 function recentItem(channel: RecentChannel, options: ChannelPickerOptions): HTMLLIElement {
-  const open = el('button', { className: 'recent-open', title: `Watch ${channel.displayName}` }, [
-    avatar(channel.profileImageUrl),
-    el('span', { className: 'recent-name', text: channel.displayName }),
-  ]);
+  const open = el(
+    'button',
+    { className: 'recent-open', title: l10n.t('Watch {0}', channel.displayName) },
+    [
+      avatar(channel.profileImageUrl),
+      el('span', { className: 'recent-name', text: channel.displayName }),
+    ],
+  );
   open.addEventListener('click', () => options.onOpen(channel.login));
   const remove = el(
     'button',
     {
       className: 'icon-button recent-remove',
-      title: 'Remove from recent channels',
-      attributes: { 'aria-label': `Remove ${channel.displayName} from recent channels` },
+      title: l10n.t('Remove from recent channels'),
+      attributes: { 'aria-label': l10n.t('Remove {0} from recent channels', channel.displayName) },
     },
     [icon(ICONS.close)],
   );
@@ -38,8 +43,8 @@ export function createChannelPicker(options: ChannelPickerOptions): HTMLElement 
     className: 'channel-input',
     attributes: {
       type: 'text',
-      placeholder: 'Channel name or twitch.tv link',
-      'aria-label': 'Twitch channel',
+      placeholder: l10n.t('Channel name or twitch.tv link'),
+      'aria-label': l10n.t('Twitch channel'),
       spellcheck: 'false',
       autocomplete: 'off',
     },
@@ -47,7 +52,11 @@ export function createChannelPicker(options: ChannelPickerOptions): HTMLElement 
   const error = el('div', { className: 'picker-error', attributes: { role: 'alert' } });
   const form = el('form', { className: 'channel-form' }, [
     input,
-    el('button', { className: 'primary-button', text: 'Watch', attributes: { type: 'submit' } }),
+    el('button', {
+      className: 'primary-button',
+      text: l10n.t('Watch'),
+      attributes: { type: 'submit' },
+    }),
   ]);
   form.addEventListener('submit', (event) => {
     event.preventDefault();
@@ -55,7 +64,10 @@ export function createChannelPicker(options: ChannelPickerOptions): HTMLElement 
     if (login) {
       options.onOpen(login);
     } else {
-      error.textContent = 'Enter a channel name like "papaplatte" or a twitch.tv link.';
+      error.textContent = l10n.t(
+        'Enter a channel name like "{0}" or a twitch.tv link.',
+        'papaplatte',
+      );
     }
   });
   input.addEventListener('input', () => {
@@ -64,7 +76,7 @@ export function createChannelPicker(options: ChannelPickerOptions): HTMLElement 
 
   const recent = options.recent.length
     ? [
-        el('div', { className: 'section-label', text: 'Recent' }),
+        el('div', { className: 'section-label', text: l10n.t('Recent') }),
         el(
           'ul',
           { className: 'recent-list' },

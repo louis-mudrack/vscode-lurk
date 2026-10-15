@@ -1,0 +1,20 @@
+{
+  "displayName": "Lurk – Twitch streams in your sidebar",
+  "description": "Watch Twitch livestreams in a small VS Code panel, with chat, 7TV emotes and automatic raid following.",
+  "view.player": "Twitch",
+  "view.chat": "Twitch Chat",
+  "command.openChannel": "Open Twitch Channel…",
+  "command.stop": "Stop Stream",
+  "command.openInBrowser": "Open Stream in Browser",
+  "command.showChat": "Show Chat",
+  "config.followRaids": "When the channel you are watching raids someone, switch to the raided channel automatically.",
+  "config.quality": "Preferred stream quality. The quality menu in the player overrides this until VS Code restarts.",
+  "config.quality.auto": "Pick the best quality for the panel size and bandwidth.",
+  "config.quality.1080p": "Up to 1080p (source).",
+  "config.quality.720p": "Up to 720p.",
+  "config.quality.480p": "Up to 480p.",
+  "config.quality.360p": "Up to 360p.",
+  "config.quality.160p": "Lowest quality, least bandwidth.",
+  "config.resumeLastChannel": "Reopen the last watched channel when the player panel is shown after VS Code starts.",
+  "config.chat.maxMessages": "How many chat messages to keep in the chat panel."
+}
