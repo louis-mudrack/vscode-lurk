@@ -9,6 +9,8 @@ export interface WebviewPageOptions {
   stylesheetPath: string;
   connectSources: string[];
   allowWasm: boolean;
+  /** Extension files the page script looks up by name (see `webview/common/pageAssets.ts`). */
+  assets?: Record<string, string>;
 }
 
 const LANGUAGE_TAG = /^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/;
@@ -19,12 +21,21 @@ function uiLanguage(): string {
 }
 
 /**
- * The extension's translations for the current UI language, embedded as an
- * inert JSON block for `@vscode/l10n` in the webview. `<` is escaped so the
+ * Data for the page script travels as inert JSON blocks. `<` is escaped so the
  * content can never close the script element.
  */
-function translationsJson(): string {
-  return JSON.stringify(vscode.l10n.bundle ?? {}).replace(/</g, '\\u003c');
+function jsonBlock(id: string, value: unknown): string {
+  const json = JSON.stringify(value).replace(/</g, '\\u003c');
+  return `<script type="application/json" id="${id}">${json}</script>`;
+}
+
+function assetUrls(options: WebviewPageOptions): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(options.assets ?? {}).map(([name, path]) => [
+      name,
+      options.webview.asWebviewUri(vscode.Uri.joinPath(options.extensionUri, path)).toString(),
+    ]),
+  );
 }
 
 export function localResourceRoots(extensionUri: vscode.Uri): vscode.Uri[] {
@@ -57,7 +68,8 @@ export function renderWebviewPage(options: WebviewPageOptions): string {
 </head>
 <body>
   <div id="app"></div>
-  <script type="application/json" id="l10n">${translationsJson()}</script>
+  ${jsonBlock('l10n', vscode.l10n.bundle ?? {})}
+  ${jsonBlock('assets', assetUrls(options))}
   <script nonce="${nonce}" src="${asset(options.scriptPath).toString()}"></script>
 </body>
 </html>`;

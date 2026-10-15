@@ -1,5 +1,11 @@
 import { rmSync } from 'node:fs';
 import * as esbuild from 'esbuild';
+import {
+  assertPlainText,
+  escapeControlCharacters,
+  unpackedAacDecoderPlugin,
+  writeAacDecoderWasm,
+} from './aacDecoderWasm.mjs';
 
 const watch = process.argv.includes('--watch');
 const production = process.argv.includes('--production');
@@ -32,13 +38,19 @@ const webviews = {
   platform: 'browser',
   format: 'iife',
   target: 'chrome120',
+  plugins: [unpackedAacDecoderPlugin],
 };
 
 rmSync('dist', { recursive: true, force: true });
+await writeAacDecoderWasm();
 
 if (watch) {
   const contexts = await Promise.all([esbuild.context(extensionHost), esbuild.context(webviews)]);
   await Promise.all(contexts.map((context) => context.watch()));
 } else {
   await Promise.all([esbuild.build(extensionHost), esbuild.build(webviews)]);
+  for (const bundle of ['dist/extension.js', 'dist/player.js', 'dist/chat.js']) {
+    escapeControlCharacters(bundle);
+    assertPlainText(bundle);
+  }
 }

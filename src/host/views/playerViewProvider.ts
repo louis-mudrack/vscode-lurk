@@ -55,6 +55,7 @@ export class PlayerViewProvider implements vscode.WebviewViewProvider, vscode.Di
       stylesheetPath: 'media/player.css',
       connectSources: ['https:'],
       allowWasm: true,
+      assets: { aacDecoder: 'dist/aac-decoder.wasm' },
     });
     this.disposables.push(
       view.webview.onDidReceiveMessage((message: PlayerToHostMessage) => this.handle(message)),

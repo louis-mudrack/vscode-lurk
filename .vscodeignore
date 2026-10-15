@@ -1,5 +1,6 @@
 **
 !dist/*.js
+!dist/*.wasm
 !media/*.css
 !media/*.svg
 !media/icon.png
