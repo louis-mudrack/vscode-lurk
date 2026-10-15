@@ -1,0 +1,194 @@
+{
+  "name": "twitch-video-player",
+  "displayName": "Arbeitszeitbetrug \u2013 Twitch Video Player",
+  "description": "Watch Twitch livestreams in a small sidebar panel, with 7TV chat and automatic raid following.",
+  "version": "0.1.0",
+  "publisher": "louis-mudrack",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/louis-mudrack/twitch-video-player-vsc-extension"
+  },
+  "engines": {
+    "vscode": "^1.95.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "twitch",
+    "stream",
+    "livestream",
+    "player",
+    "7tv",
+    "chat"
+  ],
+  "icon": "media/icon.png",
+  "extensionKind": [
+    "ui",
+    "workspace"
+  ],
+  "main": "./dist/extension.js",
+  "activationEvents": [],
+  "contributes": {
+    "views": {
+      "explorer": [
+        {
+          "type": "webview",
+          "id": "twitchPlayer.player",
+          "name": "Twitch",
+          "icon": "media/twitch.svg",
+          "contextualTitle": "Twitch Player"
+        },
+        {
+          "type": "webview",
+          "id": "twitchPlayer.chat",
+          "name": "Twitch Chat",
+          "icon": "media/chat.svg",
+          "contextualTitle": "Twitch Chat",
+          "visibility": "collapsed"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "twitchPlayer.openChannel",
+        "title": "Open Channel\u2026",
+        "category": "Twitch",
+        "icon": "$(search)"
+      },
+      {
+        "command": "twitchPlayer.stop",
+        "title": "Stop Stream",
+        "category": "Twitch",
+        "icon": "$(debug-stop)"
+      },
+      {
+        "command": "twitchPlayer.openInBrowser",
+        "title": "Open Stream in Browser",
+        "category": "Twitch",
+        "icon": "$(link-external)"
+      },
+      {
+        "command": "twitchPlayer.showChat",
+        "title": "Show Chat",
+        "category": "Twitch",
+        "icon": "$(comment-discussion)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "twitchPlayer.openChannel",
+          "when": "view == twitchPlayer.player",
+          "group": "navigation@1"
+        },
+        {
+          "command": "twitchPlayer.showChat",
+          "when": "view == twitchPlayer.player && twitchPlayer.hasChannel",
+          "group": "navigation@2"
+        },
+        {
+          "command": "twitchPlayer.openInBrowser",
+          "when": "view == twitchPlayer.player && twitchPlayer.hasChannel",
+          "group": "navigation@3"
+        },
+        {
+          "command": "twitchPlayer.stop",
+          "when": "view == twitchPlayer.player && twitchPlayer.hasChannel",
+          "group": "navigation@4"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "twitchPlayer.stop",
+          "when": "twitchPlayer.hasChannel"
+        },
+        {
+          "command": "twitchPlayer.openInBrowser",
+          "when": "twitchPlayer.hasChannel"
+        },
+        {
+          "command": "twitchPlayer.showChat",
+          "when": "twitchPlayer.hasChannel"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Twitch Video Player",
+      "properties": {
+        "twitchPlayer.followRaids": {
+          "type": "boolean",
+          "default": true,
+          "description": "When the channel you are watching raids someone, switch to the raided channel automatically."
+        },
+        "twitchPlayer.quality": {
+          "type": "string",
+          "default": "auto",
+          "enum": [
+            "auto",
+            "1080p",
+            "720p",
+            "480p",
+            "360p",
+            "160p"
+          ],
+          "enumDescriptions": [
+            "Pick the best quality for the panel size and bandwidth.",
+            "Up to 1080p (source).",
+            "Up to 720p.",
+            "Up to 480p.",
+            "Up to 360p.",
+            "Lowest quality, least bandwidth."
+          ],
+          "description": "Preferred stream quality. The quality menu in the player overrides this for the current session."
+        },
+        "twitchPlayer.resumeLastChannel": {
+          "type": "boolean",
+          "default": false,
+          "description": "Reopen the last watched channel when the player panel is shown after VS Code starts."
+        },
+        "twitchPlayer.chat.maxMessages": {
+          "type": "number",
+          "default": 200,
+          "minimum": 20,
+          "maximum": 1000,
+          "description": "How many chat messages to keep in the chat panel."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "watch": "node scripts/build.mjs --watch",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p src/webview/tsconfig.json --noEmit && tsc -p test/tsconfig.json --noEmit",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "check": "npm run typecheck && npm run lint && npm run format:check && npm test",
+    "vscode:prepublish": "node scripts/build.mjs --production",
+    "package": "vsce package --no-dependencies",
+    "test:e2e": "npm run build && node test/e2e/run.mjs"
+  },
+  "dependencies": {
+    "@wasm-audio-decoders/aac": "0.0.1",
+    "hls.js": "1.7.3",
+    "ws": "8.22.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.0",
+    "@types/node": "^22.20.5",
+    "@types/vscode": "1.95.0",
+    "@types/ws": "^8.18.2",
+    "@vscode/test-electron": "^3.1.0",
+    "@vscode/vsce": "^4.0.0",
+    "esbuild": "^0.28.2",
+    "eslint": "^10.12.0",
+    "globals": "^16.5.0",
+    "prettier": "^3.9.10",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.71.2",
+    "vitest": "^5.0.4"
+  }
+}
