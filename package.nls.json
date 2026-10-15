@@ -1,6 +1,6 @@
 {
   "displayName": "Lurk – Twitch streams in your sidebar",
-  "description": "Watch Twitch livestreams and past broadcasts in a small VS Code panel, with chat, 7TV emotes and the channels you follow.",
+  "description": "Twitch player and chat for the VS Code sidebar, with emotes, videos and the channels you follow.",
   "view.player": "Twitch",
   "view.chat": "Twitch Chat",
   "command.openChannel": "Open Twitch Channel…",
