@@ -301,7 +301,7 @@
     "@vscode/l10n": "^0.0.18",
     "@wasm-audio-decoders/aac": "0.0.1",
     "hls.js": "1.7.3",
-    "ws": "8.22.0"
+    "ws": "8.22.1"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.0",
